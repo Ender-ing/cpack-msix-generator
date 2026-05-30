@@ -24,6 +24,41 @@ Pre-generator tooling:
 include("msix-generator-module/MSIXTools.cmake")
 ```
 
+### CMake Fetch
+
+If you wish to use CMake fetching to add this repository, you may do so like this:
+
+```cmake
+FetchContent_Declare(MSIXGen
+    GIT_REPOSITORY https://github.com/Ender-ing/cpack-msix-generator
+    GIT_TAG main # Or a commit hash!
+)
+FetchContent_MakeAvailable(MSIXGen)
+```
+
+And, you have two options of implementation:
+
+```cmake
+# The same as before:
+list(APPEND CPACK_GENERATOR "External")
+set(CPACK_EXTERNAL_PACKAGE_SCRIPT ${CPACK_MSIX_GENERATOR})
+set(CPACK_EXTERNAL_ENABLE_STAGING ON)
+
+include(${CPACK_MSIX_GENERATOR_TOOLS})
+```
+
+Or, you could use the provided preset:
+
+```cmake
+cpack_msix_preset() # This does the same thing as the code above
+
+cpack_msix_preset(OFF) # The same, EXCEPT it makes the MSIX External Generator THE ONLY CPack generator.
+```
+
+> [!NOTE]
+> In order to avoid compatibility when fetching from the main branch,
+> it is recommended to use `cpack_msix_preset`.
+
 ### Quick Start
 
 If you already configured your CMake build to work with cpack using other generators,
