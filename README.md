@@ -55,7 +55,7 @@ include("msix-generator-module/MSIXTools.cmake")
 
 #### `CPACK_MSIX_APPLICATIONS` (*required*)
 
-> [!DANGER]
+> [!CAUTION]
 > You should not modify this by yourself!
 > Please use [MSIXTools](#msix-tools) to add application implementations!
 
