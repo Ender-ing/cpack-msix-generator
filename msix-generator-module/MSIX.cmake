@@ -179,7 +179,7 @@ file(MAKE_DIRECTORY "${MSIX_STAGING_ROOT}")
 
 message(STATUS "[CPACK MSIX] Flattening component directories into ${MSIX_STAGING_ROOT}...")
 
-# 3. Loop through the component folders and merge their contents
+# Loop through the component folders and merge their contents
 file(GLOB MSIX_COMPONENT_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_STAGE_ROOT}/*")
 foreach(COMP_DIR IN LISTS MSIX_COMPONENT_DIRS)
     if(IS_DIRECTORY "${COMP_DIR}")
@@ -197,7 +197,7 @@ endforeach()
 ####################################################
 
 # Get the binaries directory (usually /bin)
-set(MSIX_INTERNAL_BIN "${MSIX_STAGING_ROOT}/${CPACK_MSIX_RUNTIME_FOLDER_NAME}")
+# set(MSIX_INTERNAL_BIN "${MSIX_STAGING_ROOT}/${CPACK_MSIX_RUNTIME_FOLDER_NAME}")
 
 # Get a list of manifest applications
 set(MSIX_INTERNAL_MANIFEST_APPLICATIONS "")
@@ -281,21 +281,23 @@ file(REMOVE_RECURSE "${MSIX_STAGING_DEBUG_ROOT}") # Clean up from previous runs
 file(MAKE_DIRECTORY "${MSIX_STAGING_DEBUG_ROOT}")
 
 # Move debug files
-file(GLOB MSIX_INTERNAL_PDB_FILES "${MSIX_INTERNAL_BIN}/*.pdb")
+file(GLOB_RECURSE MSIX_INTERNAL_PDB_FILES "${MSIX_STAGING_ROOT}/*.pdb")
 list(LENGTH MSIX_INTERNAL_PDB_FILES MSIX_INTERNAL_PDB_COUNT)
 set(MSIX_INTERNAL_PDB_DETECTED OFF)
 if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     message(STATUS "[CPACK MSIX] Debug symbols found. Beginning debug symbols isolation...")
     set(MSIX_INTERNAL_PDB_DETECTED ON)
 
-    add_custom_command(
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MSIX_INTERNAL_PDB_FILES} ${MSIX_STAGING_DEBUG_ROOT}
-        COMMAND ${CMAKE_COMMAND} -E rm ${MSIX_INTERNAL_PDB_FILES}
-        COMMENT "Moving .pdb files to the isolated directory..."
-    )
+    # Copy and Delete original files
+    file(COPY ${MSIX_INTERNAL_PDB_FILES} DESTINATION "${MSIX_STAGING_DEBUG_ROOT}")
+    foreach(PDB_FILE ${MSIX_INTERNAL_PDB_FILES})
+        if(EXISTS ${PDB_FILE})
+            file(REMOVE ${PDB_FILE})
+        endif()
+    endforeach()
 
     # Update MSIX_INTERNAL_PDB_FILES
-    file(GLOB MSIX_INTERNAL_PDB_FILES "${MSIX_STAGING_DEBUG_ROOT}/*")
+    file(GLOB_RECURSE MSIX_INTERNAL_PDB_FILES "${MSIX_STAGING_DEBUG_ROOT}/*")
 endif()
 
 
