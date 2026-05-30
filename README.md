@@ -126,7 +126,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 - Description: A `JSON` list of custom application implementations.
   This value will not be documented!
-  You may read the contents of `MSIXTools.cmake` to figure how to add your own custom implementaionts.
+  You may read the contents of `MSIXTools.cmake` to figure how to add your own custom implementations.
 
 > [!NOTE]
 > You are always welcome to contribute your own custom application implementations,
