@@ -24,6 +24,24 @@ Pre-generator tooling:
 include("msix-generator-module/MSIXTools.cmake")
 ```
 
+### Quick Start
+
+If you already configured your CMake build to work with cpack using other generators,
+you mostly only need these variables to get the MSIX external generator to work with your existing configurations:
+
+```cmake
+# Configs
+set(CPACK_MSIX_RUNTIME_FOLDER_NAME ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}) # In case your default runtime folder isn't 'bin'
+set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .appxupload file!
+
+# Identity
+set(CPACK_MSIX_PACKAGE_IDENTITY_NAME "MyAwesomeProjectIdentity")
+set(CPACK_MSIX_PACKAGE_ARCHITECTURE "x86_64") # Could also use x64. (Check documentation below for more info) 
+set(CPACK_MSIX_PACKAGE_LOGO "C:/absolute/path/to/my/logo.png")
+set(CPACK_MSIX_PACKAGE_LOGO_44 "C:/absolute/path/to/my/logo_44x44.png")
+set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
+```
+
 ## `CPACK_MSIX_*` values
 
 ### Package generation
