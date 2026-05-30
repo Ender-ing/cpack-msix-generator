@@ -275,6 +275,30 @@ file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO}" "${MSIX_STAGING_ROOT}/Assets/Logo.pn
 file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_44}" "${MSIX_STAGING_ROOT}/Assets/Logo-44.png")
 file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_150}" "${MSIX_STAGING_ROOT}/Assets/Logo-150.png")
 
+# Make a debug dir
+set(MSIX_STAGING_DEBUG_ROOT "${CPACK_TOPLEVEL_DIRECTORY}/MSIX_DEBUG")
+file(REMOVE_RECURSE "${MSIX_STAGING_DEBUG_ROOT}") # Clean up from previous runs
+file(MAKE_DIRECTORY "${MSIX_STAGING_DEBUG_ROOT}")
+
+# Move debug files
+file(GLOB MSIX_INTERNAL_PDB_FILES "${MSIX_INTERNAL_BIN}/*.pdb")
+list(LENGTH MSIX_INTERNAL_PDB_FILES MSIX_INTERNAL_PDB_COUNT)
+set(MSIX_INTERNAL_PDB_DETECTED OFF)
+if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
+    message(STATUS "[CPACK MSIX] Debug symbols found. Beginning debug symbols isolation...")
+    set(MSIX_INTERNAL_PDB_DETECTED ON)
+
+    add_custom_command(
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MSIX_INTERNAL_PDB_FILES} ${MSIX_STAGING_DEBUG_ROOT}
+        COMMAND ${CMAKE_COMMAND} -E rm ${MSIX_INTERNAL_PDB_FILES}
+        COMMENT "Moving .pdb files to the isolated directory..."
+    )
+
+    # Update MSIX_INTERNAL_PDB_FILES
+    file(GLOB MSIX_INTERNAL_PDB_FILES "${MSIX_STAGING_DEBUG_ROOT}/*")
+endif()
+
+
 ####################################################
 ## PACKAGING
 ## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
@@ -308,36 +332,54 @@ execute_process(
 )
 if(NOT MAKEAPPX_RESULT EQUAL 0)
     message(FATAL_ERROR "[CPACK MSIX] MakeAppx failed to generate the MSIX package." ${MAKEAPPX_OUTPUT} ${MAKEAPPX_ERROR})
+else()
+    message(STATUS "[CPACK MSIX] Generated an MSIX package: ${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix")
 endif()
 
 # Check if an upload file is required
 if(CPACK_MSIX_GENERATE_UPLOAD)
     message(STATUS "[CPACK MSIX] Generating a '.msixupload' file...")
 
-    # Check for debug symbols
-    file(GLOB MSIX_INTERNAL_PDB_FILES "${MSIX_INTERNAL_BIN}/*.pdb")
-    list(LENGTH MSIX_INTERNAL_PDB_FILES MSIX_INTERNAL_PDB_COUNT)
-    set(MSIX_INTERNAL_PDB_DETECTED OFF)
-    if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
+    # Package debug symbols
+    if(MSIX_INTERNAL_PDB_DETECTED)
         message(STATUS "[CPACK MSIX] Debug symbols found. Generating a '.appxsym' file...")
-        set(MSIX_INTERNAL_PDB_DETECTED ON)
 
         # Zip the .pdb files into .appxsym
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym" --format=zip ${MSIX_INTERNAL_PDB_FILES}
             RESULT_VARIABLE PDB_ZIP_RESULT
+            OUTPUT_VARIABLE PDB_ZIP_OUTPUT
+            ERROR_VARIABLE PDB_ZIP_ERROR
         )
+
+        if(NOT PDB_ZIP_RESULT EQUAL 0)
+            message(FATAL_ERROR "[CPACK MSIX] MakeAppx failed to generate a '.appxsym' file." ${PDB_ZIP_OUTPUT} ${PDB_ZIP_ERROR})
+        else()
+            message(STATUS "[CPACK MSIX] Generated an debug symbols file: ${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym")
+        endif()
     endif()
 
     # Zip the contents into .msixupload
     if(MSIX_INTERNAL_PDB_DETECTED)
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym"
+            RESULT_VARIABLE UPLOAD_ZIP_RESULT
+            OUTPUT_VARIABLE UPLOAD_ZIP_OUTPUT
+            ERROR_VARIABLE UPLOAD_ZIP_ERROR
         )
     else()
         message(WARNING "[CPACK MSIX] Couldn't include debug symbols in '.msixupload'...")
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix"
+            RESULT_VARIABLE UPLOAD_ZIP_RESULT
+            OUTPUT_VARIABLE UPLOAD_ZIP_OUTPUT
+            ERROR_VARIABLE UPLOAD_ZIP_ERROR
         )
+    endif()
+
+    if(NOT UPLOAD_ZIP_RESULT EQUAL 0)
+        message(FATAL_ERROR "[CPACK MSIX] Failed to generate a '.msixupload' file." ${UPLOAD_ZIP_OUTPUT} ${UPLOAD_ZIP_ERROR})
+    else()
+        message(STATUS "[CPACK MSIX] Generated an MSIXUpload file: ${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload")
     endif()
 endif()
