@@ -243,3 +243,8 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Support package signing (`CPACK_MSIX_CERTIFICATE_PATH`)
 - Support custom Windows Kits targets (`CPACK_MSIX_WIN_KITS_BIN_PATH` & `CPACK_MSIX_WIN_KITS_VERSION`)
 - Support custom `<capabilities>` specifications. (`CPACK_MSIX_CAPABILITIES`)
+
+## Useful resources
+
+- [GitHub maidamai0/hello_msix](https://github.com/maidamai0/hello_msix)
+- [GitHub microsoft/winappCli](https://github.com/microsoft/winappCli)
