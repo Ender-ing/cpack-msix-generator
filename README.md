@@ -149,7 +149,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 #### `CPACK_MSIX_PACKAGE_ARCHITECTURE` (*required*)
 
 - Description: Sets the `ProcessorArchitecture` that your program supports.
-- Legal Pattern: `x86_64|x64|arm64|x86_32|x86`
+- Legal Pattern: `x86_32|x86|x86_64|x64|arm32|arm|arm64|neutral`
 
 #### `CPACK_MSIX_PACKAGE_IDENTITY_NAME` (*required*)
 
