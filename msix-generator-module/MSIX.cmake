@@ -142,7 +142,7 @@ if(NOT DEFINED CPACK_MSIX_RUNTIME_FOLDER_NAME)
 endif()
 
 # [PACKAGE UPLOAD]
-option(CPACK_MSIX_GENERATE_UPLOAD "Trigger MSIX '.appxupload' file generation" OFF)
+option(CPACK_MSIX_GENERATE_UPLOAD "Trigger MSIX '.msixupload' file generation" OFF)
 
 # [PACKAGE COMMANDS]
 # CPACK_MSIX_APPLICATIONS (REQUIRED)
@@ -312,7 +312,7 @@ endif()
 
 # Check if an upload file is required
 if(CPACK_MSIX_GENERATE_UPLOAD)
-    message(STATUS "[CPACK MSIX] Generating a '.appxupload' file...")
+    message(STATUS "[CPACK MSIX] Generating a '.msixupload' file...")
 
     # Check for debug symbols
     file(GLOB MSIX_INTERNAL_PDB_FILES "${MSIX_INTERNAL_BIN}/*.pdb")
@@ -329,15 +329,15 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
         )
     endif()
 
-    # Zip the contents into .appxupload
+    # Zip the contents into .msixupload
     if(MSIX_INTERNAL_PDB_DETECTED)
         execute_process(
-            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym"
+            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym"
         )
     else()
-        message(WARNING "[CPACK MSIX] Couldn't include debug symbols in '.appxupload'...")
+        message(WARNING "[CPACK MSIX] Couldn't include debug symbols in '.msixupload'...")
         execute_process(
-            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix"
+            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix"
         )
     endif()
 endif()
