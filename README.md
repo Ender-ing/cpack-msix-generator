@@ -149,7 +149,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 #### `CPACK_MSIX_PACKAGE_ARCHITECTURE` (*required*)
 
 - Description: Sets the `ProcessorArchitecture` that your program supports.
-- Legal Pattern: `x86_64|x64|arm64|x86_32|x86`
+- Legal Pattern: `x86_32|x86|x86_64|x64|arm32|arm|arm64|neutral`
 
 #### `CPACK_MSIX_PACKAGE_IDENTITY_NAME` (*required*)
 
@@ -241,3 +241,4 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Add asset sets for logos, colours, etc. (`cpack_msix_add_assets_set`)
 - Add a graphical applicaiton type (`cpack_msix_add_application_graphical`)
 - Support package signing (`CPACK_MSIX_CERTIFICATE_PATH`)
+- Support custom Windows Kits targets (`CPACK_MSIX_WIN_KITS_BIN_PATH` & `CPACK_MSIX_WIN_KITS_VERSION`)
