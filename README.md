@@ -157,6 +157,9 @@ include("msix-generator-module/MSIXTools.cmake")
 
 ## MSIX tools
 
+> [!NOTE]
+> You must add *at least* add one application implementation to your package in order for the generator not to fail!
+
 ### Applications
 
 #### `cpack_msix_add_application_alias`
