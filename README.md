@@ -3,7 +3,8 @@
 A custom CPack external generator implementation for natively building Windows MSIX and MSIXUPLOAD packages.
 
 > [!NOTE]
-> This project, as it as right now, can be used by CLI packages.
+> Features are added to this project as needed by the [Juggernyaut Toolchain](https://github.com/Ender-ing/Juggernyaut).
+>
 > If you wish to add any more features, or you want to ask for them, do not hesitate!
 
 ## Usage
