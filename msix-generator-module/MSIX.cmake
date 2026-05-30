@@ -314,8 +314,7 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
         endif()
     endforeach()
 
-    # Update MSIX_INTERNAL_PDB_FILES
-    file(GLOB_RECURSE MSIX_INTERNAL_PDB_FILES "${MSIX_STAGING_DEBUG_ROOT}/*")
+    # We're done with MSIX_INTERNAL_PDB_FILES!
 endif()
 
 
@@ -339,12 +338,17 @@ find_program(MAKEAPPX_EXECUTABLE makeappx
     REQUIRED
 )
 
+# Create a packaging folder
+set(MSIX_STAGING_UPLOAD_ROOT "${CPACK_TOPLEVEL_DIRECTORY}/MSIX_UPLOAD")
+file(REMOVE_RECURSE "${MSIX_STAGING_UPLOAD_ROOT}")
+file(MAKE_DIRECTORY "${MSIX_STAGING_UPLOAD_ROOT}")
+
 # Invoke MakeAppx to bundle the directory into the final MSIX
 message(STATUS "[CPACK MSIX] Packaging MSIX with MakeAppx...")
 execute_process(
     COMMAND "${MAKEAPPX_EXECUTABLE}" pack 
             /d "${MSIX_STAGING_ROOT}" 
-            /p "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix"
+            /p "${MSIX_STAGING_UPLOAD_ROOT}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix"
             /o # Overwrite if exists
     RESULT_VARIABLE MAKEAPPX_RESULT
     OUTPUT_VARIABLE MAKEAPPX_OUTPUT
@@ -353,7 +357,12 @@ execute_process(
 if(NOT MAKEAPPX_RESULT EQUAL 0)
     message(FATAL_ERROR "[CPACK MSIX] MakeAppx failed to generate the MSIX package." ${MAKEAPPX_OUTPUT} ${MAKEAPPX_ERROR})
 else()
-    message(STATUS "[CPACK MSIX] Generated an MSIX package: ${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix")
+    message(STATUS "[CPACK MSIX] Generated an MSIX package: ${MSIX_STAGING_UPLOAD_ROOT}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix")
+
+    message(STATUS "[CPACK MSIX] Copying MSIX package from '${MSIX_STAGING_UPLOAD_ROOT}' to '${${CPACK_PACKAGE_DIRECTORY}}'...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MSIX_STAGING_UPLOAD_ROOT}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix" "${CPACK_PACKAGE_DIRECTORY}"
+    )
 endif()
 
 # Check if an upload file is required
@@ -366,7 +375,7 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
 
         # Zip the .pdb files into .appxsym
         execute_process(
-            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym" --format=zip ${MSIX_INTERNAL_PDB_FILES}
+            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${MSIX_STAGING_UPLOAD_ROOT}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym" --format=zip .
             WORKING_DIRECTORY "${MSIX_STAGING_DEBUG_ROOT}"
             RESULT_VARIABLE PDB_ZIP_RESULT
             OUTPUT_VARIABLE PDB_ZIP_OUTPUT
@@ -376,30 +385,21 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
         if(NOT PDB_ZIP_RESULT EQUAL 0)
             message(FATAL_ERROR "[CPACK MSIX] MakeAppx failed to generate a '.appxsym' file." ${PDB_ZIP_OUTPUT} ${PDB_ZIP_ERROR})
         else()
-            message(STATUS "[CPACK MSIX] Generated an debug symbols file: ${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym")
+            message(STATUS "[CPACK MSIX] Generated an debug symbols file: ${MSIX_STAGING_UPLOAD_ROOT}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym")
         endif()
     endif()
 
     # Zip the contents into .msixupload
-    if(MSIX_INTERNAL_PDB_DETECTED)
-        execute_process(
-            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym"
-            WORKING_DIRECTORY "${MSIX_STAGING_ROOT}"
-            RESULT_VARIABLE UPLOAD_ZIP_RESULT
-            OUTPUT_VARIABLE UPLOAD_ZIP_OUTPUT
-            ERROR_VARIABLE UPLOAD_ZIP_ERROR
-        )
-    else()
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip .
+        WORKING_DIRECTORY "${MSIX_STAGING_UPLOAD_ROOT}"
+        RESULT_VARIABLE UPLOAD_ZIP_RESULT
+        OUTPUT_VARIABLE UPLOAD_ZIP_OUTPUT
+        ERROR_VARIABLE UPLOAD_ZIP_ERROR
+    )
+    if(NOT MSIX_INTERNAL_PDB_DETECTED)
         message(WARNING "[CPACK MSIX] Couldn't include debug symbols in '.msixupload'...")
-        execute_process(
-            COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix"
-            WORKING_DIRECTORY "${MSIX_STAGING_ROOT}"
-            RESULT_VARIABLE UPLOAD_ZIP_RESULT
-            OUTPUT_VARIABLE UPLOAD_ZIP_OUTPUT
-            ERROR_VARIABLE UPLOAD_ZIP_ERROR
-        )
     endif()
-
     if(NOT UPLOAD_ZIP_RESULT EQUAL 0)
         message(FATAL_ERROR "[CPACK MSIX] Failed to generate a '.msixupload' file." ${UPLOAD_ZIP_OUTPUT} ${UPLOAD_ZIP_ERROR})
     else()
