@@ -87,7 +87,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Description: The name of the generated `.msix`, `.appxsym`, and `.msixupload` files.
 - Fallback: `CPACK_PACKAGE_FILE_NAME`
 
-#### `CPACK_MSIX_RUNTIME_FOLDER_NAME` (*required*)
+#### `CPACK_MSIX_RUNTIME_FOLDER_NAME`
 
 > [!IMPORTANT]
 > This value should match your build's runtime destination folder name value!
