@@ -140,6 +140,10 @@ endif()
 if(NOT DEFINED CPACK_MSIX_RUNTIME_FOLDER_NAME)
     set(CPACK_MSIX_RUNTIME_FOLDER_NAME bin)
 endif()
+# CPACK_MSIX_DEBUG_PATH_OFFSET
+if(NOT DEFINED CPACK_MSIX_DEBUG_PATH_OFFSET)
+    set(CPACK_MSIX_DEBUG_PATH_OFFSET "")
+endif()
 
 # [PACKAGE UPLOAD]
 option(CPACK_MSIX_GENERATE_UPLOAD "Trigger MSIX '.msixupload' file generation" OFF)
@@ -289,8 +293,22 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     set(MSIX_INTERNAL_PDB_DETECTED ON)
 
     # Copy and Delete original files
-    file(COPY ${MSIX_INTERNAL_PDB_FILES} DESTINATION "${MSIX_STAGING_DEBUG_ROOT}")
-    foreach(PDB_FILE ${MSIX_INTERNAL_PDB_FILES})
+    foreach(PDB_FILE IN LISTS MSIX_INTERNAL_PDB_FILES)
+    
+        # Get fixed path
+        if(CPACK_MSIX_DEBUG_PATH_OFFSET STREQUAL "")
+            set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}")
+        else()
+            set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}/${CPACK_MSIX_DEBUG_PATH_OFFSET}")
+        endif()
+        file(RELATIVE_PATH REL_PDB_PATH "${REL_PDB_PATH_BASE}" "${PDB_FILE}")
+        set(FULL_PDB_DEST_PATH "${MSIX_STAGING_DEBUG_ROOT}/${REL_PDB_PATH}")
+
+        # Move the file
+        message(STATUS "[CPACK MSIX] Isolating debug symbols file '${PDB_FILE}' into: ${FULL_PDB_DEST_PATH}")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PDB_FILE}" "${FULL_PDB_DEST_PATH}"
+        )
         if(EXISTS ${PDB_FILE})
             file(REMOVE ${PDB_FILE})
         endif()
@@ -349,6 +367,7 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
         # Zip the .pdb files into .appxsym
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym" --format=zip ${MSIX_INTERNAL_PDB_FILES}
+            WORKING_DIRECTORY "${MSIX_STAGING_DEBUG_ROOT}"
             RESULT_VARIABLE PDB_ZIP_RESULT
             OUTPUT_VARIABLE PDB_ZIP_OUTPUT
             ERROR_VARIABLE PDB_ZIP_ERROR
@@ -365,6 +384,7 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
     if(MSIX_INTERNAL_PDB_DETECTED)
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix" "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.appxsym"
+            WORKING_DIRECTORY "${MSIX_STAGING_ROOT}"
             RESULT_VARIABLE UPLOAD_ZIP_RESULT
             OUTPUT_VARIABLE UPLOAD_ZIP_OUTPUT
             ERROR_VARIABLE UPLOAD_ZIP_ERROR
@@ -373,6 +393,7 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
         message(WARNING "[CPACK MSIX] Couldn't include debug symbols in '.msixupload'...")
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar "cf" "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload" --format=zip "${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msix"
+            WORKING_DIRECTORY "${MSIX_STAGING_ROOT}"
             RESULT_VARIABLE UPLOAD_ZIP_RESULT
             OUTPUT_VARIABLE UPLOAD_ZIP_OUTPUT
             ERROR_VARIABLE UPLOAD_ZIP_ERROR

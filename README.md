@@ -93,7 +93,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 > Application implementations make through `MSIXTools.cmake` could break if misconfigured!
 
 - Description: The name of the runtime binaries folder.
-- Fallback: `bin`
+- Default: `bin`
 
 #### `CPACK_MSIX_GENERATE_UPLOAD`
 
@@ -105,6 +105,17 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 - Description: Enable `.msixupload` generation.
 - Default: `OFF`
+
+#### `CPACK_MSIX_DEBUG_PATH_OFFSET`
+
+> [!CAUTION]
+> The contents of the `.appxsym` file must mirror your binaries/libraries folder patterns.
+>
+> **For example**, if your binaries are in `/bin`, and your symbols are in `/sym/bin`,
+> then you **must** define `CPACK_MSIX_DEBUG_PATH_OFFSET` to be `sym` - so the
+> package generator could preserve your folder patterns!
+
+- Description: Debug symbols archive path offset.
 
 #### `CPACK_MSIX_APPLICATIONS` (*required*)
 
