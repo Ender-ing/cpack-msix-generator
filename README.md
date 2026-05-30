@@ -1,6 +1,6 @@
 # cpack-msix-generator
 
-A custom CPack external generator implementation for natively building Windows MSIX and APPXUPLOAD packages.
+A custom CPack external generator implementation for natively building Windows MSIX and MSIXUPLOAD packages.
 
 > [!NOTE]
 > This project, as it as right now, can be used by CLI packages.
@@ -67,7 +67,7 @@ you mostly only need these variables to get the MSIX external generator to work 
 ```cmake
 # Configs
 set(CPACK_MSIX_RUNTIME_FOLDER_NAME ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}) # In case your default runtime folder isn't 'bin'
-set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .appxupload file!
+set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .msixupload file!
 
 # Identity
 set(CPACK_MSIX_PACKAGE_IDENTITY_NAME "MyAwesomeProjectIdentity")
@@ -83,13 +83,13 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 #### `CPACK_MSIX_PACKAGE_FILE_NAME`
 
-- Description: The name of the generated `.msix`, `.appxsym`, and `.appxupload` files.
+- Description: The name of the generated `.msix`, `.appxsym`, and `.msixupload` files.
 - Fallback: `CPACK_PACKAGE_FILE_NAME`
 
 #### `CPACK_MSIX_RUNTIME_FOLDER_NAME` (*required*)
 
 > [!IMPORTANT]
-> This value should match your `CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION` value!
+> This value should match your build's runtime destination folder name value!
 > Application implementations make through `MSIXTools.cmake` could break if misconfigured!
 
 - Description: The name of the runtime binaries folder.
@@ -98,12 +98,12 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 #### `CPACK_MSIX_GENERATE_UPLOAD`
 
 > [!WARNING]
-> You are allowed to generate `.appxupload` files without debug symbols,
+> You are allowed to generate `.msixupload` files without debug symbols,
 > with the risk of getting your Microsoft Store uploads rejected!
 >
 > (Note that debug symbols are automatically bundled when detected)
 
-- Description: Enable `.appxupload` generation.
+- Description: Enable `.msixupload` generation.
 - Default: `OFF`
 
 #### `CPACK_MSIX_APPLICATIONS` (*required*)
@@ -228,3 +228,4 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 - Add asset sets for logos, colours, etc. (`cpack_msix_add_assets_set`)
 - Add a graphical applicaiton type (`cpack_msix_add_application_graphical`)
+- Support package signing (`CPACK_MSIX_CERTIFICATE_PATH`)
