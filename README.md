@@ -1,6 +1,6 @@
 # cpack-msix-generator
 
-A custom CPack external generator implementation for natively building Windows MSIX and MSIXUPLOAD packages.
+A custom CPack external generator implementation for natively building Windows MSIX and MSIXUpload packages.
 
 > [!NOTE]
 > Features are added to this project as needed by the [Juggernyaut Toolchain](https://github.com/Ender-ing/Juggernyaut).
@@ -57,7 +57,7 @@ cpack_msix_preset(OFF) # The same, EXCEPT it makes the MSIX External Generator T
 ```
 
 > [!NOTE]
-> In order to avoid compatibility when fetching from the main branch,
+> In order to avoid compatibility issues when fetching from the main branch,
 > it is recommended to use `cpack_msix_preset`.
 
 ### Quick Start
