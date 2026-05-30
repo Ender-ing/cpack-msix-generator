@@ -38,10 +38,6 @@
         @MSIX_INTERNAL_MANIFEST_APPLICATIONS@
     </Applications>
 
-    <!--<Files>
-        @MSIX_INTERNAL_MANIFEST_FILES@
-    </Files>-->
-
     <Capabilities>
         <rescap:Capability Name="runFullTrust"
             xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" />
