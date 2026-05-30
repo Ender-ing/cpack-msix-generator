@@ -89,7 +89,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 #### `CPACK_MSIX_RUNTIME_FOLDER_NAME` (*required*)
 
 > [!IMPORTANT]
-> This value should match your `CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION` value!
+> This value should match your build's runtime destination folder name value!
 > Application implementations make through `MSIXTools.cmake` could break if misconfigured!
 
 - Description: The name of the runtime binaries folder.
