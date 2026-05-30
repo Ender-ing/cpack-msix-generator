@@ -255,19 +255,6 @@ foreach(INDEX RANGE ${MSIX_INTERNAL_APPLICATIONS_LAST_INDEX})
     endif()
 endforeach()
 
-# Generate a list of files to install
-#file(GLOB_RECURSE MSIX_INTERNAL_STAGED_FILES "${MSIX_STAGING_ROOT}/*")
-#set(MSIX_INTERNAL_MANIFEST_FILES "")
-#foreach(FILE ${MSIX_INTERNAL_STAGED_FILES})
-#    # Strip the staging prefix to get the relative path
-#    file(RELATIVE_PATH REL_PATH "${MSIX_STAGING_ROOT}" "${FILE}")
-#    
-#    # If it's a file, add it to the Manifest's <Files> section
-#    if(NOT IS_DIRECTORY ${FILE})
-#        set(MSIX_INTERNAL_MANIFEST_FILES "${MSIX_INTERNAL_MANIFEST_FILES}<File RelativePath=\"${REL_PATH}\" />\n    ")
-#    endif()
-#endforeach()
-
 # Generate a manifest
 configure_file(
     "${CMAKE_CURRENT_LIST_DIR}/AppxManifest.xml.in"
