@@ -363,7 +363,7 @@ set(MSIX_INTERNAL_SEARCH_PATHS "")
 # Prioritise the user's preferred version
 if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
     set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_PREFERRED_VERSION}")
-    foreach(ARCH "x64;arm64;x86;arm")
+    foreach(ARCH "x64" "arm64" "x86" "arm")
         if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
             list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
         endif()
@@ -378,7 +378,7 @@ list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
 if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
     # Give priority to newer versions!
     foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-        foreach(ARCH "x64;arm64;x86;arm")
+    foreach(ARCH "x64" "arm64" "x86" "arm")
             if(EXISTS "${DIR}/${ARCH}")
                 list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
             endif()
@@ -386,7 +386,7 @@ if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
     endforeach()
 else()
     # Give priority to the newest arch-specific version!
-    foreach(ARCH "x64;arm64;x86;arm")
+    foreach(ARCH "x64" "arm64" "x86" "arm")
         foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
             if(EXISTS "${DIR}/${ARCH}")
                 list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
@@ -400,6 +400,9 @@ find_program(MAKEAPPX_EXECUTABLE makeappx
     PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
     REQUIRED
 )
+if(MAKEAPPX_EXECUTABLE)
+    message(STATUS "[CPACK MSIX] Found MakeAppx at: ${MAKEAPPX_EXECUTABLE}")
+endif()
 
 ####################################################
 ## PACKAGING
