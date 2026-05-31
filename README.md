@@ -71,7 +71,6 @@ set(CPACK_MSIX_RUNTIME_FOLDER_NAME ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}) 
 set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .msixupload file!
 
 # Identity
-set(CPACK_MSIX_PACKAGE_IDENTITY_NAME "MyAwesomeProjectIdentity")
 set(CPACK_MSIX_PACKAGE_ARCHITECTURE "x86_64") # Could also use x64. (Check documentation below for more info) 
 set(CPACK_MSIX_PACKAGE_LOGO "C:/absolute/path/to/my/logo.png")
 set(CPACK_MSIX_PACKAGE_LOGO_44 "C:/absolute/path/to/my/logo_44x44.png")
@@ -148,16 +147,12 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Components: `CPACK_MSIX_PACKAGE_VERSION_MAJOR`, `CPACK_MSIX_PACKAGE_VERSION_MINOR`,
   `CPACK_MSIX_PACKAGE_VERSION_PATCH`, `CPACK_MSIX_PACKAGE_VERSION_REVISION`
 - Legal Pattern: `[0-9]+`
+- Default: `0`
 
 #### `CPACK_MSIX_PACKAGE_ARCHITECTURE` (*required*)
 
 - Description: Sets the `ProcessorArchitecture` that your program supports.
 - Legal Pattern: `x86_32|x86|x86_64|x64|arm32|arm|arm64|neutral`
-
-#### `CPACK_MSIX_PACKAGE_IDENTITY_NAME` (*required*)
-
-- Description: Sets the package's identity `Name` value.
-- Legal Pattern: `[a-zA-Z\.-]{3,50}`
 
 #### `CPACK_MSIX_PACKAGE_NAME`
 
@@ -168,6 +163,12 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 - Description: Sets the display name within the installer.
 - Fallback: `CPACK_PACKAGE_DESCRIPTION_SUMMARY`
+
+#### `CPACK_MSIX_PACKAGE_IDENTITY_NAME`
+
+- Description: Sets the package's identity `Name` value.
+- Legal Pattern: `[a-zA-Z0-9\.-]{3,50}`
+- Fallback: *Generates a legal identity name based on `CPACK_MSIX_PACKAGE_NAME`*
 
 #### `CPACK_MSIX_PACKAGE_LOGO` (*required*)
 
