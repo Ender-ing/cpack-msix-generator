@@ -152,7 +152,7 @@ endif()
 # [PACKAGE UPLOAD]
 option(CPACK_MSIX_GENERATE_UPLOAD "Trigger MSIX '.msixupload' file generation" OFF)
 
-# [PACKAGE COMMANDS]
+# [PACKAGE APPLICATIONS]
 # CPACK_MSIX_APPLICATIONS (REQUIRED)
 if(DEFINED CPACK_MSIX_APPLICATIONS)
     set(MSIX_INTERNAL_APPLICATIONS "{ \"applications\": [${CPACK_MSIX_APPLICATIONS}] }")
@@ -167,6 +167,23 @@ if(DEFINED CPACK_MSIX_APPLICATIONS)
     endif()
 else()
     message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_APPLICATIONS' to point to a non-empty valid list of MSIX applications! Try using 'MSIXTools' to add applications.")
+endif()
+
+# [WINDOWS KITS]
+# CPACK_MSIX_WIN_KITS_BIN_PATH
+if((DEFINED CPACK_MSIX_WIN_KITS_BIN_PATH) AND (EXISTS "${CPACK_MSIX_WIN_KITS_BIN_PATH}"))
+    set(MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE "${CPACK_MSIX_WIN_KITS_BIN_PATH}")
+else()
+    set(MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE "C:/Program Files (x86)/Windows Kits/10/bin")
+    if(NOT EXISTS "${CPACK_MSIX_WIN_KITS_BIN_PATH}")
+        message(WARNING "[CPACK MSIX] Used 'MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE' value doesn't point to a valid bin directory. Reverting to default value: ${MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE}")
+    endif()
+endif()
+# CPACK_MSIX_WIN_KITS_VERSION
+if((DEFINED CPACK_MSIX_WIN_KITS_VERSION) AND (NOT CPACK_MSIX_WIN_KITS_VERSION MATCHES ""))
+    set(MSIX_INTERNAL_WIN_KITS_VERSION "${CPACK_MSIX_WIN_KITS_VERSION}")
+else()
+    set(MSIX_INTERNAL_WIN_KITS_VERSION "10.0.26100.4654")
 endif()
 
 ####################################################
@@ -310,26 +327,38 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     # We're done with MSIX_INTERNAL_PDB_FILES!
 endif()
 
-
 ####################################################
 ## PACKAGING
 ## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
 ####################################################
 
-# Find the 'makeappx' executable
-set(MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE "C:/Program Files (x86)/Windows Kits/10/bin")
-file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE}/*")
-set(MSIX_INTERNAL_SEARCH_PATHS "")
-foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-    # Add the x64 subfolder if it exists
-    if(EXISTS "${DIR}/x64")
-        list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/x64")
-    endif()
-endforeach()
+# Try to find 'makeappx' using the user's settings
+set(MSIX_INTERNAL_PREFERRED_SEARCH_PATHS "")
+set(MSIX_INTERNAL_WIN_KITS_PREFERRED_BIN "${MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE}/${MSIX_INTERNAL_WIN_KITS_VERSION}")
+list(APPEND MSIX_INTERNAL_PREFERRED_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_BIN}/x64")
+# Attempt to find the executable!
 find_program(MAKEAPPX_EXECUTABLE makeappx
-    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
-    REQUIRED
+    PATHS ${MSIX_INTERNAL_PREFERRED_SEARCH_PATHS}
 )
+if(MAKEAPPX_EXECUTABLE)
+    message(STATUS "[CPACK MSIX] Found 'makeappx' at: ${MAKEAPPX_EXECUTABLE}")
+else()
+    message(WARNING "[CPACK MSIX] Couldn't find 'makeappx' in: ${MSIX_INTERNAL_WIN_KITS_PREFERRED_BIN}.\nReverting to default version search behaviour...")
+
+    # Find the 'makeappx' executable
+    file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE}/*")
+    set(MSIX_INTERNAL_SEARCH_PATHS "")
+    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+        # Add the x64 subfolder if it exists
+        if(EXISTS "${DIR}/x64")
+            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/x64")
+        endif()
+    endforeach()
+    find_program(MAKEAPPX_EXECUTABLE makeappx
+        PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
+        REQUIRED
+    )
+endif()
 
 # Create a packaging folder
 set(MSIX_STAGING_UPLOAD_ROOT "${CPACK_TOPLEVEL_DIRECTORY}/MSIX_UPLOAD")
@@ -399,3 +428,9 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
         message(STATUS "[CPACK MSIX] Generated an MSIXUpload file: ${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload")
     endif()
 endif()
+
+####################################################
+## PACKAGE VERIFICATION
+####################################################
+
+# ...

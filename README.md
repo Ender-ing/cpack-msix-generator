@@ -223,6 +223,25 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Description: The street address the publisher is located at. (e.g. `Haim Levanon`)
 - Legal Pattern: [Read Distinguished Names docs](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/distinguished-names)
 
+### Windows Kits
+
+#### `CPACK_MSIX_WIN_KITS_BIN_PATH`
+
+> [!NOTE]
+> If `CPACK_MSIX_WIN_KITS_BIN_PATH` is found to be pointing to a non-existent directory,
+> the generator will revert to using the default value.
+
+- Description: Sets the bin directory of the Windows Kits.
+- Default: `C:/Program Files (x86)/Windows Kits/10/bin`
+
+#### `CPACK_MSIX_WIN_KITS_VERSION`
+
+> [!NOTE]
+> If the version set by `CPACK_MSIX_WIN_KITS_VERSION` is not found,
+> the generator will attempt to use the first valid version it could find in `CPACK_MSIX_WIN_KITS_BIN_PATH`.
+
+- Description: The preferred version of Windows Kits to use.
+
 ## MSIX tools
 
 > [!NOTE]
