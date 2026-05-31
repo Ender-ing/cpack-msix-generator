@@ -145,6 +145,8 @@ endif()
 # CPACK_MSIX_DEBUG_PATH_OFFSET
 if(NOT DEFINED CPACK_MSIX_DEBUG_PATH_OFFSET)
     set(CPACK_MSIX_DEBUG_PATH_OFFSET "")
+elseif(CPACK_MSIX_DEBUG_PATH_OFFSET MATCHES "")
+    set(MSIX_INTERNAL_FLATTEN_DEBUG_DIR ON)
 endif()
 
 # [PACKAGE UPLOAD]
@@ -285,19 +287,21 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     foreach(PDB_FILE IN LISTS MSIX_INTERNAL_PDB_FILES)
     
         # Get fixed path
-        if(CPACK_MSIX_DEBUG_PATH_OFFSET STREQUAL "")
-            set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}")
+        if(MSIX_INTERNAL_FLATTEN_DEBUG_DIR)
+            cmake_path(GET "${PDB_FILE}" FILENAME REL_PDB_PATH)
         else()
-            set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}/${CPACK_MSIX_DEBUG_PATH_OFFSET}")
+            if(CPACK_MSIX_DEBUG_PATH_OFFSET STREQUAL "")
+                set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}")
+            else()
+                set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}/${CPACK_MSIX_DEBUG_PATH_OFFSET}")
+            endif()
+            file(RELATIVE_PATH REL_PDB_PATH "${REL_PDB_PATH_BASE}" "${PDB_FILE}")
         endif()
-        file(RELATIVE_PATH REL_PDB_PATH "${REL_PDB_PATH_BASE}" "${PDB_FILE}")
         set(FULL_PDB_DEST_PATH "${MSIX_STAGING_DEBUG_ROOT}/${REL_PDB_PATH}")
 
         # Move the file
         message(STATUS "[CPACK MSIX] Isolating debug symbols file '${PDB_FILE}' into: ${FULL_PDB_DEST_PATH}")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PDB_FILE}" "${FULL_PDB_DEST_PATH}"
-        )
+        file(COPY_FILE "${PDB_FILE}" "${FULL_PDB_DEST_PATH}" ONLY_IF_DIFFERENT)
         if(EXISTS ${PDB_FILE})
             file(REMOVE ${PDB_FILE})
         endif()

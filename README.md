@@ -109,14 +109,17 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 #### `CPACK_MSIX_DEBUG_PATH_OFFSET`
 
-> [!CAUTION]
-> The contents of the `.appxsym` file must mirror your binaries/libraries folder patterns.
+> [!NOTE]
+> The generator preserves the path pattern of detected debug symbol files.
+> As such, the generated `.appxsym` file mirrors your binaries/libraries folder patterns.
+> You may use `CPACK_MSIX_DEBUG_PATH_OFFSET` to change the root relative base for packaged debug symbol files.
 >
 > **For example**, if your binaries are in `/bin`, and your symbols are in `/sym/bin`,
-> then you **must** define `CPACK_MSIX_DEBUG_PATH_OFFSET` to be `sym` - so the
-> package generator could preserve your folder patterns!
+> then you *can* define `CPACK_MSIX_DEBUG_PATH_OFFSET` to be `sym` - so the
+> package generator could preserve your bin folder patterns!
 
 - Description: Debug symbols archive path offset.
+(When set to  an *empty string*, the debug symbol files in `.appxsym` are flattened!)
 
 #### `CPACK_MSIX_APPLICATIONS` (*required*)
 
