@@ -256,10 +256,10 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 ## MSIX tools
 
-> [!NOTE]
-> You must add *at least* add one application implementation to your package in order for the generator not to fail!
-
 ### Applications
+
+> [!IMPORTANT]
+> You must add *at least* add one application implementation to your package in order for the generator not to fail!
 
 #### `cpack_msix_add_application_alias`
 
