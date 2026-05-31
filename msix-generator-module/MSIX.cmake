@@ -181,10 +181,12 @@ else()
 endif()
 # CPACK_MSIX_WIN_KITS_VERSION
 if((DEFINED CPACK_MSIX_WIN_KITS_VERSION) AND (NOT CPACK_MSIX_WIN_KITS_VERSION MATCHES ""))
-    set(MSIX_INTERNAL_WIN_KITS_VERSION "${CPACK_MSIX_WIN_KITS_VERSION}")
+    set(MSIX_INTERNAL_WIN_KITS_VERSION_SET ON)
 else()
-    set(MSIX_INTERNAL_WIN_KITS_VERSION "10.0.26100.4654")
+    set(MSIX_INTERNAL_WIN_KITS_VERSION_SET OFF)
 endif()
+# CPACK_MSIX_WIN_KITS_PREFER_NEWEST
+option(CPACK_MSIX_WIN_KITS_PREFER_NEWEST "Force overall newest version lookup. (Ignores architecture priority)" OFF)
 
 ####################################################
 ## STAGING
@@ -328,37 +330,58 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
 endif()
 
 ####################################################
-## PACKAGING
+## WINDOWS KITS LOOKUP
 ## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
 ####################################################
 
-# Try to find 'makeappx' using the user's settings
-set(MSIX_INTERNAL_PREFERRED_SEARCH_PATHS "")
-set(MSIX_INTERNAL_WIN_KITS_PREFERRED_BIN "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${MSIX_INTERNAL_WIN_KITS_VERSION}")
-list(APPEND MSIX_INTERNAL_PREFERRED_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_BIN}/x64")
-# Attempt to find the executable!
-find_program(MAKEAPPX_EXECUTABLE makeappx
-    PATHS ${MSIX_INTERNAL_PREFERRED_SEARCH_PATHS}
-)
-if(MAKEAPPX_EXECUTABLE)
-    message(STATUS "[CPACK MSIX] Found 'makeappx' at: ${MAKEAPPX_EXECUTABLE}")
-else()
-    message(WARNING "[CPACK MSIX] Couldn't find 'makeappx' in: ${MSIX_INTERNAL_WIN_KITS_PREFERRED_BIN}.\nReverting to default version search behaviour...")
+# Define search paths
+set(MSIX_INTERNAL_SEARCH_PATHS "")
 
-    # Find the 'makeappx' executable
-    file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/*")
-    set(MSIX_INTERNAL_SEARCH_PATHS "")
-    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-        # Add the x64 subfolder if it exists
-        if(EXISTS "${DIR}/x64")
-            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/x64")
+# Prioritise the user's preferred version
+if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
+    set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_VERSION}")
+    foreach(ARCH "x64;arm64;x86;arm")
+        if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
         endif()
     endforeach()
-    find_program(MAKEAPPX_EXECUTABLE makeappx
-        PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
-        REQUIRED
-    )
 endif()
+
+# Get all versioned directories, newest to oldest!
+file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/*")
+list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
+
+# Paths lookup
+if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
+    # Give priority to newer versions!
+    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+        foreach(ARCH "x64;arm64;x86;arm")
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+else()
+    # Give priority to the newest arch-specific version!
+    foreach(ARCH "x64;arm64;x86;arm")
+        foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+endif()
+
+# Attempt to find 'makeappx'
+find_program(MAKEAPPX_EXECUTABLE makeappx
+    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
+    REQUIRED
+)
+
+####################################################
+## PACKAGING
+## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
+####################################################
 
 # Create a packaging folder
 set(MSIX_STAGING_UPLOAD_ROOT "${CPACK_TOPLEVEL_DIRECTORY}/MSIX_UPLOAD")
