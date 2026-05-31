@@ -236,14 +236,6 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Description: Sets the bin directory of the *Windows Kits*.
 - Default: `C:/Program Files (x86)/Windows Kits/10/bin`
 
-#### `CPACK_MSIX_WIN_KITS_VERSION`
-
-> [!NOTE]
-> If the version set by `CPACK_MSIX_WIN_KITS_VERSION` is not found,
-> the generator will attempt to use the first valid version it could find in `CPACK_MSIX_WIN_KITS_PATH`.
-
-- Description: The preferred version of *Windows Kits* to use.
-
 #### `CPACK_MSIX_WIN_KITS_PREFER_NEWEST`
 
 > [!NOTE]
@@ -251,11 +243,15 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 > within each individual available architecture in this order:
 > 'x86_64', 'arm64', 'x86_32', and last is 'arm32'.
 
-> [!IMPORTANT]
-> Note that `CPACK_MSIX_WIN_KITS_VERSION` still takes priority over `CPACK_MSIX_WIN_KITS_PREFER_NEWEST`!
-
 - Description: Tells the generator to look for the newest version of *Windows Kits* within all architectures.
 - Default: `OFF`
+
+#### `CPACK_MSIX_WIN_KITS_PREFERRED_VERSION`
+
+> [!IMPORTANT]
+> Note that `CPACK_MSIX_WIN_KITS_PREFERRED_VERSION` still takes priority over `CPACK_MSIX_WIN_KITS_PREFER_NEWEST`!
+
+- Description: The preferred version of *Windows Kits* to use.
 
 ## MSIX tools
 
