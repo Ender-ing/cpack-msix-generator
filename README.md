@@ -247,7 +247,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 > [!NOTE]
 > The default behaviour is to look for the newest version of *Windows Kits*
-> within each individual available architectures in this order:
+> within each individual available architecture in this order:
 > 'x86_64', 'arm64', 'x86_32', and last is 'arm32'.
 
 > [!IMPORTANT]
