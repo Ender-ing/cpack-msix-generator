@@ -225,10 +225,10 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 ### Windows Kits
 
-#### `CPACK_MSIX_WIN_KITS_BIN_PATH`
+#### `CPACK_MSIX_WIN_KITS_PATH`
 
 > [!NOTE]
-> If `CPACK_MSIX_WIN_KITS_BIN_PATH` is found to be pointing to a non-existent directory,
+> If `CPACK_MSIX_WIN_KITS_PATH` is found to be pointing to a non-existent directory,
 > the generator will revert to using the default value.
 
 - Description: Sets the bin directory of the Windows Kits.
@@ -238,7 +238,7 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 > [!NOTE]
 > If the version set by `CPACK_MSIX_WIN_KITS_VERSION` is not found,
-> the generator will attempt to use the first valid version it could find in `CPACK_MSIX_WIN_KITS_BIN_PATH`.
+> the generator will attempt to use the first valid version it could find in `CPACK_MSIX_WIN_KITS_PATH`.
 
 - Description: The preferred version of Windows Kits to use.
 
