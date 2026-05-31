@@ -236,14 +236,6 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
   - `DESCRIPTION`: The description of the alias within the installer.
   - `ALIAS+`: The alias(es) you wish to add for your target/executable.
 
-## Features awaiting implementation
-
-- Add asset sets for logos, colours, etc. (`cpack_msix_add_assets_set`)
-- Add a graphical applicaiton type (`cpack_msix_add_application_graphical`)
-- Support package signing (`CPACK_MSIX_CERTIFICATE_PATH`)
-- Support custom Windows Kits targets (`CPACK_MSIX_WIN_KITS_BIN_PATH` & `CPACK_MSIX_WIN_KITS_VERSION`)
-- Support custom `<capabilities>` specifications. (`CPACK_MSIX_CAPABILITIES`)
-
 ## Useful resources
 
 - [GitHub maidamai0/hello_msix](https://github.com/maidamai0/hello_msix)
