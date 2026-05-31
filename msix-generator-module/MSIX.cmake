@@ -341,6 +341,8 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
 
         # Move the file
         message(STATUS "[CPACK MSIX] Isolating debug symbols file '${PDB_FILE}' into: ${FULL_PDB_DEST_PATH}")
+        cmake_path(GET FULL_PDB_DEST_PATH PARENT_PATH FULL_PDB_DEST_DIR)
+        file(MAKE_DIRECTORY "${FULL_PDB_DEST_DIR}")
         file(COPY_FILE "${PDB_FILE}" "${FULL_PDB_DEST_PATH}" ONLY_IF_DIFFERENT)
         if(EXISTS ${PDB_FILE})
             file(REMOVE ${PDB_FILE})
