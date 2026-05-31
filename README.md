@@ -249,7 +249,8 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 #### `CPACK_MSIX_WIN_KITS_PREFERRED_VERSION`
 
 > [!IMPORTANT]
-> Note that `CPACK_MSIX_WIN_KITS_PREFERRED_VERSION` still takes priority over `CPACK_MSIX_WIN_KITS_PREFER_NEWEST`!
+> Note that `CPACK_MSIX_WIN_KITS_PREFERRED_VERSION` takes priority over
+> `CPACK_MSIX_WIN_KITS_PREFER_NEWEST`'s lookup behaviour!
 
 - Description: The preferred version of *Windows Kits* to use.
 
