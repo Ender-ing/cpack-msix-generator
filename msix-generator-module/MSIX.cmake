@@ -326,7 +326,7 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     
         # Get fixed path
         if(MSIX_INTERNAL_FLATTEN_DEBUG_DIR)
-            cmake_path(GET "${PDB_FILE}" FILENAME REL_PDB_PATH)
+            cmake_path(GET PDB_FILE FILENAME REL_PDB_PATH)
         else()
             if(CPACK_MSIX_DEBUG_PATH_OFFSET STREQUAL "")
                 set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}")
