@@ -71,7 +71,6 @@ set(CPACK_MSIX_RUNTIME_FOLDER_NAME ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}) 
 set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .msixupload file!
 
 # Identity
-set(CPACK_MSIX_PACKAGE_IDENTITY_NAME "MyAwesomeProjectIdentity")
 set(CPACK_MSIX_PACKAGE_ARCHITECTURE "x86_64") # Could also use x64. (Check documentation below for more info) 
 set(CPACK_MSIX_PACKAGE_LOGO "C:/absolute/path/to/my/logo.png")
 set(CPACK_MSIX_PACKAGE_LOGO_44 "C:/absolute/path/to/my/logo_44x44.png")
@@ -91,7 +90,8 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 > [!IMPORTANT]
 > This value should match your build's runtime destination folder name value!
-> Application implementations make through `MSIXTools.cmake` could break if misconfigured!
+> Application implementations made through `MSIXTools.cmake` could break if
+> `CPACK_MSIX_RUNTIME_FOLDER_NAME` is misconfigured!
 
 - Description: The name of the runtime binaries folder.
 - Default: `bin`
@@ -109,14 +109,17 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 #### `CPACK_MSIX_DEBUG_PATH_OFFSET`
 
-> [!CAUTION]
-> The contents of the `.appxsym` file must mirror your binaries/libraries folder patterns.
+> [!NOTE]
+> The generator preserves the path pattern of detected debug symbol files.
+> As such, the generated `.appxsym` file mirrors your binaries/libraries folder patterns.
+> You may use `CPACK_MSIX_DEBUG_PATH_OFFSET` to change the root relative base for packaged debug symbol files.
 >
 > **For example**, if your binaries are in `/bin`, and your symbols are in `/sym/bin`,
-> then you **must** define `CPACK_MSIX_DEBUG_PATH_OFFSET` to be `sym` - so the
-> package generator could preserve your folder patterns!
+> then you *can* define `CPACK_MSIX_DEBUG_PATH_OFFSET` to be `sym` - so the
+> package generator could preserve your bin folder patterns!
 
 - Description: Debug symbols archive path offset.
+(When set to  an *empty string*, the debug symbol files in `.appxsym` are flattened!)
 
 #### `CPACK_MSIX_APPLICATIONS` (*required*)
 
@@ -145,16 +148,12 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Components: `CPACK_MSIX_PACKAGE_VERSION_MAJOR`, `CPACK_MSIX_PACKAGE_VERSION_MINOR`,
   `CPACK_MSIX_PACKAGE_VERSION_PATCH`, `CPACK_MSIX_PACKAGE_VERSION_REVISION`
 - Legal Pattern: `[0-9]+`
+- Default: `0`
 
 #### `CPACK_MSIX_PACKAGE_ARCHITECTURE` (*required*)
 
 - Description: Sets the `ProcessorArchitecture` that your program supports.
 - Legal Pattern: `x86_32|x86|x86_64|x64|arm32|arm|arm64|neutral`
-
-#### `CPACK_MSIX_PACKAGE_IDENTITY_NAME` (*required*)
-
-- Description: Sets the package's identity `Name` value.
-- Legal Pattern: `[a-zA-Z\.-]{3,50}`
 
 #### `CPACK_MSIX_PACKAGE_NAME`
 
@@ -165,6 +164,12 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 - Description: Sets the display name within the installer.
 - Fallback: `CPACK_PACKAGE_DESCRIPTION_SUMMARY`
+
+#### `CPACK_MSIX_PACKAGE_IDENTITY_NAME`
+
+- Description: Sets the package's identity `Name` value.
+- Legal Pattern: `[a-zA-Z0-9\.-]{3,50}`
+- Fallback: *Generates a legal identity name based on `CPACK_MSIX_PACKAGE_NAME`*
 
 #### `CPACK_MSIX_PACKAGE_LOGO` (*required*)
 
@@ -220,12 +225,41 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Description: The street address the publisher is located at. (e.g. `Haim Levanon`)
 - Legal Pattern: [Read Distinguished Names docs](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/distinguished-names)
 
-## MSIX tools
+### Windows Kits
+
+#### `CPACK_MSIX_WIN_KITS_PATH`
 
 > [!NOTE]
-> You must add *at least* add one application implementation to your package in order for the generator not to fail!
+> If `CPACK_MSIX_WIN_KITS_PATH` is found to be pointing to a non-existent directory,
+> the generator will revert to using the default value.
+
+- Description: Sets the bin directory of the *Windows Kits*.
+- Default: `C:/Program Files (x86)/Windows Kits/10/bin`
+
+#### `CPACK_MSIX_WIN_KITS_PREFER_NEWEST`
+
+> [!NOTE]
+> The default behaviour is to look for the newest version of *Windows Kits*
+> within each individual available architecture in this order:
+> 'x86_64', 'arm64', 'x86_32', and last is 'arm32'.
+
+- Description: Tells the generator to look for the newest version of *Windows Kits* within all architectures.
+- Default: `OFF`
+
+#### `CPACK_MSIX_WIN_KITS_PREFERRED_VERSION`
+
+> [!IMPORTANT]
+> Note that `CPACK_MSIX_WIN_KITS_PREFERRED_VERSION` takes priority over
+> `CPACK_MSIX_WIN_KITS_PREFER_NEWEST`'s lookup behaviour!
+
+- Description: The preferred version of *Windows Kits* to use.
+
+## MSIX tools
 
 ### Applications
+
+> [!IMPORTANT]
+> You must add *at least* add one application implementation to your package in order for the generator not to fail!
 
 #### `cpack_msix_add_application_alias`
 

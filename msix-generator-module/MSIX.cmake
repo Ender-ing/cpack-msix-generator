@@ -63,13 +63,6 @@ else()
 endif()
 
 # [PACKAGE DETAILS]
-# CPACK_MSIX_PACKAGE_IDENTITY_NAME (REQUIRED)
-string(LENGTH "${CPACK_MSIX_PACKAGE_IDENTITY_NAME}" MSIX_INTERNAL_IDENTITY_LENGTH)
-if((NOT DEFINED CPACK_MSIX_PACKAGE_IDENTITY_NAME) OR (MSIX_INTERNAL_IDENTITY_LENGTH LESS 3) 
-    OR (MSIX_INTERNAL_IDENTITY_LENGTH GREATER 50)
-    OR (NOT CPACK_MSIX_PACKAGE_IDENTITY_NAME MATCHES "^[a-zA-Z\\.\\-]+$"))
-    message(FATAL_ERROR "[CPACK MSIX] Expecting a valid 'CPACK_MSIX_PACKAGE_IDENTITY_NAME' value!")
-endif()
 # CPACK_MSIX_PACKAGE_NAME
 if(NOT DEFINED CPACK_MSIX_PACKAGE_NAME)
     set(CPACK_MSIX_PACKAGE_NAME ${CPACK_PACKAGE_NAME})
@@ -77,6 +70,32 @@ endif()
 # CPACK_MSIX_PACKAGE_DESCRIPTION_SUMMARY
 if(NOT DEFINED CPACK_MSIX_PACKAGE_DESCRIPTION_SUMMARY)
     set(CPACK_MSIX_PACKAGE_DESCRIPTION_SUMMARY ${CPACK_PACKAGE_DESCRIPTION_SUMMARY})
+endif()
+# CPACK_MSIX_PACKAGE_IDENTITY_NAME
+if(NOT DEFINED CPACK_MSIX_PACKAGE_IDENTITY_NAME)
+    # Sanitise name
+    string(REGEX REPLACE "[ ]" "." MSIX_INTERNAL_SANITIZED_PACKAGE_NAME "${CPACK_MSIX_PACKAGE_NAME}")
+    string(REGEX REPLACE "[^a-zA-Z0-9\\.\\-]" "" MSIX_INTERNAL_SANITIZED_PACKAGE_NAME "${MSIX_INTERNAL_SANITIZED_PACKAGE_NAME}")
+    string(REGEX REPLACE "[^a-zA-Z0-9\\.\\-]" "" MSIX_INTERNAL_SANITIZED_PACKAGE_NAME "${MSIX_INTERNAL_SANITIZED_PACKAGE_NAME}")
+    string(LENGTH "${MSIX_INTERNAL_SANITIZED_PACKAGE_NAME}" MSIX_INTERNAL_SANITIZED_PACKAGE_NAME_LENGTH)
+
+    # Ensure valid length
+    if(MSIX_INTERNAL_SANITIZED_PACKAGE_NAME_LENGTH LESS 3)
+        set(MSIX_INTERNAL_SANITIZED_PACKAGE_NAME "CPack.${MSIX_INTERNAL_SANITIZED_PACKAGE_NAME}")
+    elseif(MSIX_INTERNAL_SANITIZED_PACKAGE_NAME_LENGTH GREATER 50)
+        string(SUBSTRING "${MSIX_INTERNAL_SANITIZED_PACKAGE_NAME}" 0 50 MSIX_INTERNAL_SANITIZED_PACKAGE_NAME)
+    endif()
+
+    # Update CPACK_MSIX_PACKAGE_IDENTITY_NAME!
+    set(CPACK_MSIX_PACKAGE_IDENTITY_NAME ${MSIX_INTERNAL_SANITIZED_PACKAGE_NAME})
+
+    message(WARNING "[CPACK MSIX] No 'CPACK_MSIX_PACKAGE_IDENTITY_NAME' value detected. Generated identity name: '${MSIX_INTERNAL_SANITIZED_PACKAGE_NAME}'.")
+endif()
+string(LENGTH "${CPACK_MSIX_PACKAGE_IDENTITY_NAME}" MSIX_INTERNAL_IDENTITY_LENGTH)
+if((NOT DEFINED CPACK_MSIX_PACKAGE_IDENTITY_NAME) OR (MSIX_INTERNAL_IDENTITY_LENGTH LESS 3) 
+    OR (MSIX_INTERNAL_IDENTITY_LENGTH GREATER 50)
+    OR (NOT CPACK_MSIX_PACKAGE_IDENTITY_NAME MATCHES "^[a-zA-Z0-9\\.\\-]+$"))
+    message(FATAL_ERROR "[CPACK MSIX] Expecting a valid 'CPACK_MSIX_PACKAGE_IDENTITY_NAME' value!")
 endif()
 # CPACK_MSIX_PACKAGE_LOGO (REQUIRED)
 if((NOT CPACK_MSIX_PACKAGE_LOGO MATCHES "\\.png$") OR (NOT EXISTS ${CPACK_MSIX_PACKAGE_LOGO}))
@@ -143,14 +162,18 @@ if(NOT DEFINED CPACK_MSIX_RUNTIME_FOLDER_NAME)
     set(CPACK_MSIX_RUNTIME_FOLDER_NAME bin)
 endif()
 # CPACK_MSIX_DEBUG_PATH_OFFSET
+set(MSIX_INTERNAL_FLATTEN_DEBUG_DIR OFF)
 if(NOT DEFINED CPACK_MSIX_DEBUG_PATH_OFFSET)
     set(CPACK_MSIX_DEBUG_PATH_OFFSET "")
+elseif(CPACK_MSIX_DEBUG_PATH_OFFSET STREQUAL "")
+    set(MSIX_INTERNAL_FLATTEN_DEBUG_DIR ON)
+    message(FATAL_ERROR "[CPACK MSIX] Detected an empty 'CPACK_MSIX_DEBUG_PATH_OFFSET' value. Enabled shared directory pooling for all debug symbols.")
 endif()
 
 # [PACKAGE UPLOAD]
 option(CPACK_MSIX_GENERATE_UPLOAD "Trigger MSIX '.msixupload' file generation" OFF)
 
-# [PACKAGE COMMANDS]
+# [PACKAGE APPLICATIONS]
 # CPACK_MSIX_APPLICATIONS (REQUIRED)
 if(DEFINED CPACK_MSIX_APPLICATIONS)
     set(MSIX_INTERNAL_APPLICATIONS "{ \"applications\": [${CPACK_MSIX_APPLICATIONS}] }")
@@ -166,6 +189,25 @@ if(DEFINED CPACK_MSIX_APPLICATIONS)
 else()
     message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_APPLICATIONS' to point to a non-empty valid list of MSIX applications! Try using 'MSIXTools' to add applications.")
 endif()
+
+# [WINDOWS KITS]
+# CPACK_MSIX_WIN_KITS_PATH
+if((DEFINED CPACK_MSIX_WIN_KITS_PATH) AND (EXISTS "${CPACK_MSIX_WIN_KITS_PATH}"))
+    set(MSIX_INTERNAL_WINDOWS_KITS_BASE "${CPACK_MSIX_WIN_KITS_PATH}")
+else()
+    set(MSIX_INTERNAL_WINDOWS_KITS_BASE "C:/Program Files (x86)/Windows Kits/10/bin")
+    if((DEFINED CPACK_MSIX_WIN_KITS_PATH) AND (NOT EXISTS "${CPACK_MSIX_WIN_KITS_PATH}"))
+        message(WARNING "[CPACK MSIX] Used 'CPACK_MSIX_WIN_KITS_PATH' value doesn't point to a valid bin directory. Reverting to default value: ${MSIX_INTERNAL_WINDOWS_KITS_BASE}")
+    endif()
+endif()
+# CPACK_MSIX_WIN_KITS_PREFERRED_VERSION
+if((DEFINED CPACK_MSIX_WIN_KITS_PREFERRED_VERSION) AND (NOT CPACK_MSIX_WIN_KITS_PREFERRED_VERSION STREQUAL ""))
+    set(MSIX_INTERNAL_WIN_KITS_VERSION_SET ON)
+else()
+    set(MSIX_INTERNAL_WIN_KITS_VERSION_SET OFF)
+endif()
+# CPACK_MSIX_WIN_KITS_PREFER_NEWEST
+option(CPACK_MSIX_WIN_KITS_PREFER_NEWEST "Force overall newest version lookup. (Ignores architecture priority)" OFF)
 
 ####################################################
 ## STAGING
@@ -285,19 +327,23 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     foreach(PDB_FILE IN LISTS MSIX_INTERNAL_PDB_FILES)
     
         # Get fixed path
-        if(CPACK_MSIX_DEBUG_PATH_OFFSET STREQUAL "")
-            set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}")
+        if(MSIX_INTERNAL_FLATTEN_DEBUG_DIR)
+            cmake_path(GET PDB_FILE FILENAME REL_PDB_PATH)
         else()
-            set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}/${CPACK_MSIX_DEBUG_PATH_OFFSET}")
+            if(CPACK_MSIX_DEBUG_PATH_OFFSET STREQUAL "")
+                set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}")
+            else()
+                set(REL_PDB_PATH_BASE "${MSIX_STAGING_ROOT}/${CPACK_MSIX_DEBUG_PATH_OFFSET}")
+            endif()
+            file(RELATIVE_PATH REL_PDB_PATH "${REL_PDB_PATH_BASE}" "${PDB_FILE}")
         endif()
-        file(RELATIVE_PATH REL_PDB_PATH "${REL_PDB_PATH_BASE}" "${PDB_FILE}")
         set(FULL_PDB_DEST_PATH "${MSIX_STAGING_DEBUG_ROOT}/${REL_PDB_PATH}")
 
         # Move the file
         message(STATUS "[CPACK MSIX] Isolating debug symbols file '${PDB_FILE}' into: ${FULL_PDB_DEST_PATH}")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PDB_FILE}" "${FULL_PDB_DEST_PATH}"
-        )
+        cmake_path(GET FULL_PDB_DEST_PATH PARENT_PATH FULL_PDB_DEST_DIR)
+        file(MAKE_DIRECTORY "${FULL_PDB_DEST_DIR}")
+        file(COPY_FILE "${PDB_FILE}" "${FULL_PDB_DEST_PATH}" ONLY_IF_DIFFERENT)
         if(EXISTS ${PDB_FILE})
             file(REMOVE ${PDB_FILE})
         endif()
@@ -306,26 +352,62 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     # We're done with MSIX_INTERNAL_PDB_FILES!
 endif()
 
+####################################################
+## WINDOWS KITS LOOKUP
+## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
+####################################################
+
+# Define search paths
+set(MSIX_INTERNAL_SEARCH_PATHS "")
+
+# Prioritise the user's preferred version
+if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
+    set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_PREFERRED_VERSION}")
+    foreach(ARCH "x64" "arm64" "x86" "arm")
+        if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+        endif()
+    endforeach()
+endif()
+
+# Get all versioned directories, newest to oldest!
+file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/*")
+list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
+
+# Paths lookup
+if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
+    # Give priority to newer versions!
+    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+    foreach(ARCH "x64" "arm64" "x86" "arm")
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+else()
+    # Give priority to the newest arch-specific version!
+    foreach(ARCH "x64" "arm64" "x86" "arm")
+        foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+endif()
+
+# Attempt to find 'makeappx'
+find_program(MAKEAPPX_EXECUTABLE makeappx
+    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
+    REQUIRED
+)
+if(MAKEAPPX_EXECUTABLE)
+    message(STATUS "[CPACK MSIX] Found MakeAppx at: ${MAKEAPPX_EXECUTABLE}")
+endif()
 
 ####################################################
 ## PACKAGING
 ## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
 ####################################################
-
-# Find the 'makeappx' executable
-set(MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE "C:/Program Files (x86)/Windows Kits/10/bin")
-file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BIN_BASE}/*")
-set(MSIX_INTERNAL_SEARCH_PATHS "")
-foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-    # Add the x64 subfolder if it exists
-    if(EXISTS "${DIR}/x64")
-        list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/x64")
-    endif()
-endforeach()
-find_program(MAKEAPPX_EXECUTABLE makeappx
-    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
-    REQUIRED
-)
 
 # Create a packaging folder
 set(MSIX_STAGING_UPLOAD_ROOT "${CPACK_TOPLEVEL_DIRECTORY}/MSIX_UPLOAD")
@@ -395,3 +477,9 @@ if(CPACK_MSIX_GENERATE_UPLOAD)
         message(STATUS "[CPACK MSIX] Generated an MSIXUpload file: ${CPACK_PACKAGE_DIRECTORY}/${CPACK_MSIX_PACKAGE_FILE_NAME}.msixupload")
     endif()
 endif()
+
+####################################################
+## PACKAGE VERIFICATION
+####################################################
+
+# ...
