@@ -274,3 +274,4 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 
 - [GitHub maidamai0/hello_msix](https://github.com/maidamai0/hello_msix)
 - [GitHub microsoft/winappCli](https://github.com/microsoft/winappCli)
+- [Microsoft UWP manual conversion docs](https://learn.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-manual-conversion)
