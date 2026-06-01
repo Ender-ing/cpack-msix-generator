@@ -67,7 +67,7 @@ you mostly only need these variables to get the MSIX external generator to work 
 
 ```cmake
 # Configs
-set(CPACK_MSIX_RUNTIME_FOLDER_NAME ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}) # In case your default runtime folder isn't 'bin'
+# set(CPACK_MSIX_RUNTIME_FOLDER_NAME custom/bin) # In case your default runtime folder isn't a typical root 'bin'
 set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .msixupload file!
 
 # Identity
