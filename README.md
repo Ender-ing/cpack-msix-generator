@@ -71,6 +71,7 @@ set(CPACK_MSIX_RUNTIME_FOLDER_NAME ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}) 
 set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .msixupload file!
 
 # Identity
+set(CPACK_MSIX_PACKAGE_ARCHITECTURE "x64") # You could also use arch names like x86_64, and arm64.
 set(CPACK_MSIX_PACKAGE_LOGO "C:/absolute/path/to/my/logo.png")
 set(CPACK_MSIX_PACKAGE_LOGO_44 "C:/absolute/path/to/my/logo_44x44.png")
 set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
