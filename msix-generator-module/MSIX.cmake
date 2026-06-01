@@ -244,6 +244,64 @@ foreach(COMP_DIR IN LISTS MSIX_COMPONENT_DIRS)
 endforeach()
 
 ####################################################
+## WINDOWS KITS LOOKUP
+## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
+####################################################
+
+# Define search paths
+set(MSIX_INTERNAL_SEARCH_PATHS "")
+
+# Prioritise the user's preferred version
+if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
+    set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_PREFERRED_VERSION}")
+    foreach(ARCH "x64" "arm64" "x86" "arm")
+        if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+        endif()
+    endforeach()
+endif()
+
+# Get all versioned directories, newest to oldest!
+file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/*")
+list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
+
+# Paths lookup
+if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
+    # Give priority to newer versions!
+    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+        foreach(ARCH "x64" "arm64" "x86" "arm")
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+else()
+    # Give priority to the newest arch-specific version!
+    foreach(ARCH "x64" "arm64" "x86" "arm")
+        foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+endif()
+
+# Attempt to find 'makeappx'
+find_program(MAKEAPPX_EXECUTABLE makeappx
+    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
+    REQUIRED
+)
+if(MAKEAPPX_EXECUTABLE)
+    message(STATUS "[CPACK MSIX] Found MakeAppx at: ${MAKEAPPX_EXECUTABLE}")
+endif()
+
+####################################################
+## MICROSOFT VISUAL STUDIO TOOLS LOOKUP
+####################################################
+
+# ...
+
+####################################################
 ## PACKAGING READYUP
 ####################################################
 
@@ -349,7 +407,7 @@ if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND WIN32)
     # Grab all files
     file(GLOB_RECURSE MSIX_INTERNAL_STAGED_BINARIES 
         "${MSIX_STAGING_ROOT}/*.exe"
-        "${MSIX_STAGING_ROOT}/*.lib"
+        "${MSIX_STAGING_ROOT}/*.dll"
     )
 
     # Check if the binaries match just one architecture
@@ -385,11 +443,11 @@ if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND WIN32)
     message(STATUS "[CPACK MSIX] Detected architecture(s): ${MSIX_INTERNAL_MATCHED_ARCHITECTURES}")
     list(LENGTH MSIX_INTERNAL_MATCHED_ARCHITECTURES MSIX_INTERNAL_MATCHED_ARCHITECTURES_COUNT)
     if(MSIX_INTERNAL_MATCHED_ARCHITECTURES_COUNT EQUAL 1)
-        message(STATUS "[CPACK MSIX] Set package architecture to '${MSIX_INTERNAL_PACKAGE_ARCHITECTURE}' based on detected binaries.")
         list(GET MSIX_INTERNAL_MATCHED_ARCHITECTURES 0 MSIX_INTERNAL_PACKAGE_ARCHITECTURE)
+        message(STATUS "[CPACK MSIX] Set package architecture to '${MSIX_INTERNAL_PACKAGE_ARCHITECTURE}' based on detected binaries.")
     else()
-        message(STATUS "[CPACK MSIX] Set package architecture to 'neutral' based on detected binaries.")
         set(MSIX_INTERNAL_PACKAGE_ARCHITECTURE "neutral")
+        message(STATUS "[CPACK MSIX] Set package architecture to 'neutral' based on detected binaries.")
     endif()
 elseif(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "")
     message(FATAL_ERROR "[CPACK MSIX] Architecture detection not supported for your host platform!")
@@ -407,58 +465,6 @@ file(MAKE_DIRECTORY "${MSIX_STAGING_ROOT}/Assets")
 file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO}" "${MSIX_STAGING_ROOT}/Assets/Logo.png")
 file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_44}" "${MSIX_STAGING_ROOT}/Assets/Logo-44.png")
 file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_150}" "${MSIX_STAGING_ROOT}/Assets/Logo-150.png")
-
-####################################################
-## WINDOWS KITS LOOKUP
-## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
-####################################################
-
-# Define search paths
-set(MSIX_INTERNAL_SEARCH_PATHS "")
-
-# Prioritise the user's preferred version
-if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
-    set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_PREFERRED_VERSION}")
-    foreach(ARCH "x64" "arm64" "x86" "arm")
-        if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
-            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
-        endif()
-    endforeach()
-endif()
-
-# Get all versioned directories, newest to oldest!
-file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/*")
-list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
-
-# Paths lookup
-if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
-    # Give priority to newer versions!
-    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-        foreach(ARCH "x64" "arm64" "x86" "arm")
-            if(EXISTS "${DIR}/${ARCH}")
-                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
-            endif()
-        endforeach()
-    endforeach()
-else()
-    # Give priority to the newest arch-specific version!
-    foreach(ARCH "x64" "arm64" "x86" "arm")
-        foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-            if(EXISTS "${DIR}/${ARCH}")
-                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
-            endif()
-        endforeach()
-    endforeach()
-endif()
-
-# Attempt to find 'makeappx'
-find_program(MAKEAPPX_EXECUTABLE makeappx
-    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
-    REQUIRED
-)
-if(MAKEAPPX_EXECUTABLE)
-    message(STATUS "[CPACK MSIX] Found MakeAppx at: ${MAKEAPPX_EXECUTABLE}")
-endif()
 
 ####################################################
 ## PACKAGING
