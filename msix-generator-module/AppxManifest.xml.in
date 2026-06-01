@@ -8,7 +8,7 @@
     <Identity Name="@CPACK_MSIX_PACKAGE_IDENTITY_NAME@"
         Publisher="@MSIX_INTERNAL_PUBLISHER@"
         Version="@MSIX_INTERNAL_PACKAGE_VERSION@"
-        ProcessorArchitecture="@CPACK_MSIX_PACKAGE_ARCHITECTURE@" />
+        ProcessorArchitecture="@MSIX_INTERNAL_PACKAGE_ARCHITECTURE@" />
 
     <Properties>
         <DisplayName>@CPACK_MSIX_PACKAGE_NAME@</DisplayName>

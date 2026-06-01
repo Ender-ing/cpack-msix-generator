@@ -71,7 +71,6 @@ set(CPACK_MSIX_RUNTIME_FOLDER_NAME ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}) 
 set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .msixupload file!
 
 # Identity
-set(CPACK_MSIX_PACKAGE_ARCHITECTURE "x86_64") # Could also use x64. (Check documentation below for more info) 
 set(CPACK_MSIX_PACKAGE_LOGO "C:/absolute/path/to/my/logo.png")
 set(CPACK_MSIX_PACKAGE_LOGO_44 "C:/absolute/path/to/my/logo_44x44.png")
 set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
@@ -150,7 +149,14 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Legal Pattern: `[0-9]+`
 - Default: `0`
 
-#### `CPACK_MSIX_PACKAGE_ARCHITECTURE` (*required*)
+#### `CPACK_MSIX_PACKAGE_ARCHITECTURE`
+
+> [!NOTE]
+> When `CPACK_MSIX_PACKAGE_ARCHITECTURE` is not specified, the generator will scan your packages
+> binaries and assign their shared architecture as the package's binaries architecture.
+>
+> *Note that* when multiple architectures (or none of the supported ones) are detected in your
+> packaged binaries, the generator will default to the `neutral` architecture package value.
 
 - Description: Sets the `ProcessorArchitecture` that your program supports.
 - Legal Pattern: `x86_32|x86|x86_64|x64|arm32|arm|arm64|neutral`

@@ -42,7 +42,8 @@ else()
 endif()
 
 # [PLATFORM VARIABLES]
-# CPACK_MSIX_PACKAGE_ARCHITECTURE (REQUIRED)
+# CPACK_MSIX_PACKAGE_ARCHITECTURE
+set(MSIX_INTERNAL_PACKAGE_ARCHITECTURE "")
 if(DEFINED CPACK_MSIX_PACKAGE_ARCHITECTURE)
     # Port over arch names
     if(CPACK_MSIX_PACKAGE_ARCHITECTURE STREQUAL "x86_32")
@@ -55,11 +56,13 @@ if(DEFINED CPACK_MSIX_PACKAGE_ARCHITECTURE)
         set(CPACK_MSIX_PACKAGE_ARCHITECTURE "arm64")
     endif()
 
-    if(NOT CPACK_MSIX_PACKAGE_ARCHITECTURE MATCHES "^(x86|x64|arm|arm64|neutral)$")
+    if(CPACK_MSIX_PACKAGE_ARCHITECTURE MATCHES "^(x86|x64|arm|arm64|neutral)$")
+        set(MSIX_INTERNAL_PACKAGE_ARCHITECTURE ${CPACK_MSIX_PACKAGE_ARCHITECTURE})
+    else()
         message(FATAL_ERROR "[CPACK MSIX] Expecting a valid 'CPACK_MSIX_PACKAGE_ARCHITECTURE' value: x86|x64|arm|arm64|neutral")
     endif()
 else()
-    message(FATAL_ERROR "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_ARCHITECTURE' must be set!")
+    message(STATUS "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_ARCHITECTURE' not set! Automatic architecture detection enabled...")
 endif()
 
 # [PACKAGE DETAILS]
@@ -297,19 +300,6 @@ foreach(INDEX RANGE ${MSIX_INTERNAL_APPLICATIONS_LAST_INDEX})
     endif()
 endforeach()
 
-# Generate a manifest
-configure_file(
-    "${CMAKE_CURRENT_LIST_DIR}/AppxManifest.xml.in"
-    "${MSIX_STAGING_ROOT}/AppxManifest.xml"
-    @ONLY
-)
-
-# Copy manfiest assets
-file(MAKE_DIRECTORY "${MSIX_STAGING_ROOT}/Assets")
-file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO}" "${MSIX_STAGING_ROOT}/Assets/Logo.png")
-file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_44}" "${MSIX_STAGING_ROOT}/Assets/Logo-44.png")
-file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_150}" "${MSIX_STAGING_ROOT}/Assets/Logo-150.png")
-
 # Make a debug dir
 set(MSIX_STAGING_DEBUG_ROOT "${CPACK_TOPLEVEL_DIRECTORY}/MSIX_DEBUG")
 file(REMOVE_RECURSE "${MSIX_STAGING_DEBUG_ROOT}") # Clean up from previous runs
@@ -352,6 +342,72 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     # We're done with MSIX_INTERNAL_PDB_FILES!
 endif()
 
+# Match binaries archecture
+if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND WIN32)
+    message(STATUS "[CPACK MSIX] Beginning architecture detection...")
+
+    # Grab all files
+    file(GLOB_RECURSE MSIX_INTERNAL_STAGED_BINARIES 
+        "${MSIX_STAGING_ROOT}/*.exe"
+        "${MSIX_STAGING_ROOT}/*.lib"
+    )
+
+    # Check if the binaries match just one architecture
+    set(MSIX_INTERNAL_MATCHED_ARCHITECTURES "")
+    foreach(STAGED_BIN ${MSIX_INTERNAL_STAGED_BINARIES})
+        # Get dumpbin data
+        execute_process(
+            COMMAND dumpbin /HEADERS "${STAGED_BIN}"
+            OUTPUT_VARIABLE ARCH_OUTPUT
+        )
+
+        # Match architecture strings
+        if(ARCH_OUTPUT MATCHES "machine \\(x64\\)")
+            if(NOT "x64" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
+                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "x64")
+            endif()
+        elseif(ARCH_OUTPUT MATCHES "machine \\(ARM64\\)")
+            if(NOT "arm64" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
+                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "arm64")
+            endif()
+        elseif(ARCH_OUTPUT MATCHES "machine \\(x86\\)")
+            if(NOT "x86" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
+                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "x86")
+            endif()
+        elseif(ARCH_OUTPUT MATCHES "machine \\(ARM\\)")
+            if(NOT "arm" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
+                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "arm")
+            endif()
+        endif()
+    endforeach()
+
+    # Determine final architecture
+    message(STATUS "[CPACK MSIX] Detected architecture(s): ${MSIX_INTERNAL_MATCHED_ARCHITECTURES}")
+    list(LENGTH MSIX_INTERNAL_MATCHED_ARCHITECTURES MSIX_INTERNAL_MATCHED_ARCHITECTURES_COUNT)
+    if(MSIX_INTERNAL_MATCHED_ARCHITECTURES_COUNT EQUAL 1)
+        message(STATUS "[CPACK MSIX] Set package architecture to '${MSIX_INTERNAL_PACKAGE_ARCHITECTURE}' based on detected binaries.")
+        list(GET MSIX_INTERNAL_MATCHED_ARCHITECTURES 0 MSIX_INTERNAL_PACKAGE_ARCHITECTURE)
+    else()
+        message(STATUS "[CPACK MSIX] Set package architecture to 'neutral' based on detected binaries.")
+        set(MSIX_INTERNAL_PACKAGE_ARCHITECTURE "neutral")
+    endif()
+elseif(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "")
+    message(FATAL_ERROR "[CPACK MSIX] Architecture detection not supported for your host platform!")
+endif()
+
+# Generate a manifest
+configure_file(
+    "${CMAKE_CURRENT_LIST_DIR}/AppxManifest.xml.in"
+    "${MSIX_STAGING_ROOT}/AppxManifest.xml"
+    @ONLY
+)
+
+# Copy manfiest assets
+file(MAKE_DIRECTORY "${MSIX_STAGING_ROOT}/Assets")
+file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO}" "${MSIX_STAGING_ROOT}/Assets/Logo.png")
+file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_44}" "${MSIX_STAGING_ROOT}/Assets/Logo-44.png")
+file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_150}" "${MSIX_STAGING_ROOT}/Assets/Logo-150.png")
+
 ####################################################
 ## WINDOWS KITS LOOKUP
 ## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
@@ -378,7 +434,7 @@ list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
 if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
     # Give priority to newer versions!
     foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-    foreach(ARCH "x64" "arm64" "x86" "arm")
+        foreach(ARCH "x64" "arm64" "x86" "arm")
             if(EXISTS "${DIR}/${ARCH}")
                 list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
             endif()
