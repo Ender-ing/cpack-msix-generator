@@ -43,7 +43,6 @@ endif()
 
 # [PLATFORM VARIABLES]
 # CPACK_MSIX_PACKAGE_ARCHITECTURE
-set(MSIX_INTERNAL_PACKAGE_ARCHITECTURE "")
 if(DEFINED CPACK_MSIX_PACKAGE_ARCHITECTURE)
     # Port over arch names
     if(CPACK_MSIX_PACKAGE_ARCHITECTURE STREQUAL "x86_32")
@@ -56,13 +55,11 @@ if(DEFINED CPACK_MSIX_PACKAGE_ARCHITECTURE)
         set(CPACK_MSIX_PACKAGE_ARCHITECTURE "arm64")
     endif()
 
-    if(CPACK_MSIX_PACKAGE_ARCHITECTURE MATCHES "^(x86|x64|arm|arm64|neutral)$")
-        set(MSIX_INTERNAL_PACKAGE_ARCHITECTURE ${CPACK_MSIX_PACKAGE_ARCHITECTURE})
-    else()
+    if(NOT CPACK_MSIX_PACKAGE_ARCHITECTURE MATCHES "^(x86|x64|arm|arm64|neutral)$")
         message(FATAL_ERROR "[CPACK MSIX] Expecting a valid 'CPACK_MSIX_PACKAGE_ARCHITECTURE' value: x86|x64|arm|arm64|neutral")
     endif()
 else()
-    message(STATUS "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_ARCHITECTURE' not set! Automatic architecture detection enabled...")
+    message(FATAL_ERROR "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_ARCHITECTURE' not set!")
 endif()
 
 # [PACKAGE DETAILS]
@@ -296,18 +293,6 @@ if(MAKEAPPX_EXECUTABLE)
 endif()
 
 ####################################################
-## MICROSOFT VISUAL STUDIO TOOLS LOOKUP (optional)
-####################################################
-
-# Get dumpbin
-get_filename_component(MSIX_INTERNAL_MSVC_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
-find_program(DUMPBIN_EXECUTABLE NAMES dumpbin HINTS ${MSIX_INTERNAL_MSVC_BIN_DIR})
-
-if(DUMPBIN_EXECUTABLE)
-    message(STATUS "[CPACK MSIX] Found dumpbin at: ${DUMPBIN_EXECUTABLE}")
-endif()
-
-####################################################
 ## PACKAGING READYUP
 ####################################################
 
@@ -404,59 +389,6 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     endforeach()
 
     # We're done with MSIX_INTERNAL_PDB_FILES!
-endif()
-
-# Match binaries archecture
-if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND DUMPBIN_EXECUTABLE)
-    message(STATUS "[CPACK MSIX] Beginning architecture detection...")
-
-    # Grab all files
-    file(GLOB_RECURSE MSIX_INTERNAL_STAGED_BINARIES 
-        "${MSIX_STAGING_ROOT}/*.exe"
-        "${MSIX_STAGING_ROOT}/*.dll"
-    )
-
-    # Check if the binaries match just one architecture
-    set(MSIX_INTERNAL_MATCHED_ARCHITECTURES "")
-    foreach(STAGED_BIN ${MSIX_INTERNAL_STAGED_BINARIES})
-        # Get dumpbin data
-        execute_process(
-            COMMAND ${DUMPBIN_EXECUTABLE} /HEADERS "${STAGED_BIN}"
-            OUTPUT_VARIABLE ARCH_OUTPUT
-        )
-
-        # Match architecture strings
-        if(ARCH_OUTPUT MATCHES "machine \\(x64\\)")
-            if(NOT "x64" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
-                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "x64")
-            endif()
-        elseif(ARCH_OUTPUT MATCHES "machine \\(ARM64\\)")
-            if(NOT "arm64" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
-                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "arm64")
-            endif()
-        elseif(ARCH_OUTPUT MATCHES "machine \\(x86\\)")
-            if(NOT "x86" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
-                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "x86")
-            endif()
-        elseif(ARCH_OUTPUT MATCHES "machine \\(ARM\\)")
-            if(NOT "arm" IN_LIST MSIX_INTERNAL_MATCHED_ARCHITECTURES)
-                list(APPEND MSIX_INTERNAL_MATCHED_ARCHITECTURES "arm")
-            endif()
-        endif()
-    endforeach()
-
-    # Determine final architecture
-    message(STATUS "[CPACK MSIX] Detected architecture(s): ${MSIX_INTERNAL_MATCHED_ARCHITECTURES}")
-    list(LENGTH MSIX_INTERNAL_MATCHED_ARCHITECTURES MSIX_INTERNAL_MATCHED_ARCHITECTURES_COUNT)
-    if(MSIX_INTERNAL_MATCHED_ARCHITECTURES_COUNT EQUAL 1)
-        list(GET MSIX_INTERNAL_MATCHED_ARCHITECTURES 0 MSIX_INTERNAL_PACKAGE_ARCHITECTURE)
-        message(STATUS "[CPACK MSIX] Set package architecture to '${MSIX_INTERNAL_PACKAGE_ARCHITECTURE}' based on detected binaries.")
-    else()
-        set(MSIX_INTERNAL_PACKAGE_ARCHITECTURE "neutral")
-        message(STATUS "[CPACK MSIX] Set package architecture to 'neutral' based on detected binaries.")
-    endif()
-elseif(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "")
-    message(FATAL_ERROR "[CPACK MSIX] Architecture detection not supported for your host machine! (Make sure MSVS Tools are detectable, or set `CPACK_MSIX_PACKAGE_ARCHITECTURE` manually)")
 endif()
 
 # Generate a manifest
