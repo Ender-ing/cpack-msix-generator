@@ -158,6 +158,10 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 > *Note that* when multiple architectures (or none of the supported ones) are detected in your
 > packaged binaries, the generator will default to the `neutral` architecture package value.
 
+> [!CAUTION]
+> If *Microsoft Visual Studio Tools* isn't detected successfully on your machine,
+> and `CPACK_MSIX_PACKAGE_ARCHITECTURE` isn't set, the generator will fail!
+
 - Description: Sets the `ProcessorArchitecture` that your program supports.
 - Legal Pattern: `x86_32|x86|x86_64|x64|arm32|arm|arm64|neutral`
 

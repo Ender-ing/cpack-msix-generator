@@ -249,14 +249,14 @@ endforeach()
 ####################################################
 
 # Define search paths
-set(MSIX_INTERNAL_SEARCH_PATHS "")
+set(MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "")
 
 # Prioritise the user's preferred version
 if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
     set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_PREFERRED_VERSION}")
     foreach(ARCH "x64" "arm64" "x86" "arm")
         if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
-            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+            list(APPEND MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
         endif()
     endforeach()
 endif()
@@ -271,7 +271,7 @@ if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
     foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
         foreach(ARCH "x64" "arm64" "x86" "arm")
             if(EXISTS "${DIR}/${ARCH}")
-                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "${DIR}/${ARCH}")
             endif()
         endforeach()
     endforeach()
@@ -280,7 +280,7 @@ else()
     foreach(ARCH "x64" "arm64" "x86" "arm")
         foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
             if(EXISTS "${DIR}/${ARCH}")
-                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "${DIR}/${ARCH}")
             endif()
         endforeach()
     endforeach()
@@ -288,7 +288,7 @@ endif()
 
 # Attempt to find 'makeappx'
 find_program(MAKEAPPX_EXECUTABLE makeappx
-    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
+    PATHS ${MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS}
     REQUIRED
 )
 if(MAKEAPPX_EXECUTABLE)
@@ -296,10 +296,16 @@ if(MAKEAPPX_EXECUTABLE)
 endif()
 
 ####################################################
-## MICROSOFT VISUAL STUDIO TOOLS LOOKUP
+## MICROSOFT VISUAL STUDIO TOOLS LOOKUP (optional)
 ####################################################
 
-# ...
+# Get dumpbin
+get_filename_component(MSIX_INTERNAL_MSVC_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
+find_program(DUMPBIN_EXECUTABLE NAMES dumpbin HINTS ${MSIX_INTERNAL_MSVC_BIN_DIR})
+
+if(DUMPBIN_EXECUTABLE)
+    message(STATUS "[CPACK MSIX] Found dumpbin at: ${DUMPBIN_EXECUTABLE}")
+endif()
 
 ####################################################
 ## PACKAGING READYUP
@@ -401,7 +407,7 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
 endif()
 
 # Match binaries archecture
-if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND WIN32)
+if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND DUMPBIN_EXECUTABLE)
     message(STATUS "[CPACK MSIX] Beginning architecture detection...")
 
     # Grab all files
@@ -415,7 +421,7 @@ if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND WIN32)
     foreach(STAGED_BIN ${MSIX_INTERNAL_STAGED_BINARIES})
         # Get dumpbin data
         execute_process(
-            COMMAND dumpbin /HEADERS "${STAGED_BIN}"
+            COMMAND ${DUMPBIN_EXECUTABLE} /HEADERS "${STAGED_BIN}"
             OUTPUT_VARIABLE ARCH_OUTPUT
         )
 
@@ -450,7 +456,7 @@ if(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "" AND WIN32)
         message(STATUS "[CPACK MSIX] Set package architecture to 'neutral' based on detected binaries.")
     endif()
 elseif(MSIX_INTERNAL_PACKAGE_ARCHITECTURE STREQUAL "")
-    message(FATAL_ERROR "[CPACK MSIX] Architecture detection not supported for your host platform!")
+    message(FATAL_ERROR "[CPACK MSIX] Architecture detection not supported for your host machine! (Make sure MSVS Tools are detectable, or set `CPACK_MSIX_PACKAGE_ARCHITECTURE` manually)")
 endif()
 
 # Generate a manifest
