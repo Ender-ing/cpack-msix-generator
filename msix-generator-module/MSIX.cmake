@@ -317,7 +317,8 @@ foreach(INDEX RANGE ${MSIX_INTERNAL_APPLICATIONS_LAST_INDEX})
                                 EntryPoint=\"Windows.FullTrustApplication\">
       
             <uap:VisualElements DisplayName=\"${CURRENT_NAME}\" Description=\"${CURRENT_DESCRIPTION}\" 
-                              BackgroundColor=\"transparent\" Square150x150Logo=\"Assets\\Logo-150.png\" Square44x44Logo=\"Assets\\Logo-44.png\" />
+                              BackgroundColor=\"transparent\" Square150x150Logo=\"Assets\\Logo-150.png\" Square44x44Logo=\"Assets\\Logo-44.png\"
+                              AppListEntry=\"none\" />
 
             <Extensions>
                 <uap5:Extension Category=\"windows.appExecutionAlias\">
