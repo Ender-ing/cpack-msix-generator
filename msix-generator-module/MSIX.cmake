@@ -42,7 +42,7 @@ else()
 endif()
 
 # [PLATFORM VARIABLES]
-# CPACK_MSIX_PACKAGE_ARCHITECTURE (REQUIRED)
+# CPACK_MSIX_PACKAGE_ARCHITECTURE
 if(DEFINED CPACK_MSIX_PACKAGE_ARCHITECTURE)
     # Port over arch names
     if(CPACK_MSIX_PACKAGE_ARCHITECTURE STREQUAL "x86_32")
@@ -59,7 +59,7 @@ if(DEFINED CPACK_MSIX_PACKAGE_ARCHITECTURE)
         message(FATAL_ERROR "[CPACK MSIX] Expecting a valid 'CPACK_MSIX_PACKAGE_ARCHITECTURE' value: x86|x64|arm|arm64|neutral")
     endif()
 else()
-    message(FATAL_ERROR "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_ARCHITECTURE' must be set!")
+    message(FATAL_ERROR "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_ARCHITECTURE' not set!")
 endif()
 
 # [PACKAGE DETAILS]
@@ -97,17 +97,29 @@ if((NOT DEFINED CPACK_MSIX_PACKAGE_IDENTITY_NAME) OR (MSIX_INTERNAL_IDENTITY_LEN
     OR (NOT CPACK_MSIX_PACKAGE_IDENTITY_NAME MATCHES "^[a-zA-Z0-9\\.\\-]+$"))
     message(FATAL_ERROR "[CPACK MSIX] Expecting a valid 'CPACK_MSIX_PACKAGE_IDENTITY_NAME' value!")
 endif()
-# CPACK_MSIX_PACKAGE_LOGO (REQUIRED)
-if((NOT CPACK_MSIX_PACKAGE_LOGO MATCHES "\\.png$") OR (NOT EXISTS ${CPACK_MSIX_PACKAGE_LOGO}))
-    message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_PACKAGE_LOGO' to point to a valid '.png' file!")
+# CPACK_MSIX_PACKAGE_LOGO
+if(NOT CPACK_MSIX_PACKAGE_LOGO MATCHES "\\.png$")
+    set(CPACK_MSIX_PACKAGE_LOGO "${CMAKE_CURRENT_LIST_DIR}/assets/placeholder_logo.png")
+    message(WARNING "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_LOGO' isn't set to a valid '.png' path! Falling back to the default path: ${CPACK_MSIX_PACKAGE_LOGO}")
 endif()
-# CPACK_MSIX_PACKAGE_LOGO_44 (REQUIRED)
-if((NOT CPACK_MSIX_PACKAGE_LOGO_44 MATCHES "\\.png$") OR (NOT EXISTS ${CPACK_MSIX_PACKAGE_LOGO_44}))
-    message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_PACKAGE_LOGO_44' to point to a valid 44x44 '.png' file!")
+if(NOT EXISTS ${CPACK_MSIX_PACKAGE_LOGO})
+    message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_PACKAGE_LOGO' to point to a valid '.png' file! Current path used: ${CPACK_MSIX_PACKAGE_LOGO}")
 endif()
-# CPACK_MSIX_PACKAGE_LOGO_150 (REQUIRED)
-if((NOT CPACK_MSIX_PACKAGE_LOGO_150 MATCHES "\\.png$") OR (NOT EXISTS ${CPACK_MSIX_PACKAGE_LOGO_150}))
-    message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_PACKAGE_LOGO_150' to point to a valid 150x150 '.png' file!")
+# CPACK_MSIX_PACKAGE_LOGO_44
+if(NOT CPACK_MSIX_PACKAGE_LOGO_44 MATCHES "\\.png$")
+    message(WARNING "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_LOGO_44' isn't set to a valid '.png' path! Falling back to the default path: ${CPACK_MSIX_PACKAGE_LOGO_44}")
+    set(CPACK_MSIX_PACKAGE_LOGO_44 "${CMAKE_CURRENT_LIST_DIR}/assets/placeholder_logo_44x44.png")
+endif()
+if(NOT EXISTS ${CPACK_MSIX_PACKAGE_LOGO_44})
+    message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_PACKAGE_LOGO_44' to point to a valid 44x44 '.png' file! Current path used: ${CPACK_MSIX_PACKAGE_LOGO_44}")
+endif()
+# CPACK_MSIX_PACKAGE_LOGO_150
+if(NOT CPACK_MSIX_PACKAGE_LOGO_150 MATCHES "\\.png$")
+    message(WARNING "[CPACK MSIX] 'CPACK_MSIX_PACKAGE_LOGO_150' isn't set to a valid '.png' path! Falling back to the default path: ${CPACK_MSIX_PACKAGE_LOGO_150}")
+    set(CPACK_MSIX_PACKAGE_LOGO_150 "${CMAKE_CURRENT_LIST_DIR}/assets/placeholder_logo_150x150.png")
+endif()
+if(NOT EXISTS ${CPACK_MSIX_PACKAGE_LOGO_150})
+    message(FATAL_ERROR "[CPACK MSIX] Expecting 'CPACK_MSIX_PACKAGE_LOGO_150' to point to a valid 150x150 '.png' file! Current path used: ${CPACK_MSIX_PACKAGE_LOGO_150}")
 endif()
 
 # [PUBLISHER]
@@ -241,6 +253,58 @@ foreach(COMP_DIR IN LISTS MSIX_COMPONENT_DIRS)
 endforeach()
 
 ####################################################
+## WINDOWS KITS LOOKUP
+## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
+####################################################
+
+# Define search paths
+set(MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "")
+
+# Prioritise the user's preferred version
+if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
+    set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_PREFERRED_VERSION}")
+    foreach(ARCH "x64" "arm64" "x86" "arm")
+        if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+            list(APPEND MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
+        endif()
+    endforeach()
+endif()
+
+# Get all versioned directories, newest to oldest!
+file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/*")
+list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
+
+# Paths lookup
+if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
+    # Give priority to newer versions!
+    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+        foreach(ARCH "x64" "arm64" "x86" "arm")
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+else()
+    # Give priority to the newest arch-specific version!
+    foreach(ARCH "x64" "arm64" "x86" "arm")
+        foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
+            if(EXISTS "${DIR}/${ARCH}")
+                list(APPEND MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS "${DIR}/${ARCH}")
+            endif()
+        endforeach()
+    endforeach()
+endif()
+
+# Attempt to find 'makeappx'
+find_program(MAKEAPPX_EXECUTABLE makeappx
+    PATHS ${MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS}
+    REQUIRED
+)
+if(MAKEAPPX_EXECUTABLE)
+    message(STATUS "[CPACK MSIX] Found MakeAppx at: ${MAKEAPPX_EXECUTABLE}")
+endif()
+
+####################################################
 ## PACKAGING READYUP
 ####################################################
 
@@ -265,7 +329,8 @@ foreach(INDEX RANGE ${MSIX_INTERNAL_APPLICATIONS_LAST_INDEX})
                                 EntryPoint=\"Windows.FullTrustApplication\">
       
             <uap:VisualElements DisplayName=\"${CURRENT_NAME}\" Description=\"${CURRENT_DESCRIPTION}\" 
-                              BackgroundColor=\"transparent\" Square150x150Logo=\"Assets\\Logo-150.png\" Square44x44Logo=\"Assets\\Logo-44.png\" />
+                              BackgroundColor=\"transparent\" Square150x150Logo=\"Assets\\Logo-150.png\" Square44x44Logo=\"Assets\\Logo-44.png\"
+                              AppListEntry=\"none\" />
 
             <Extensions>
                 <uap5:Extension Category=\"windows.appExecutionAlias\">
@@ -296,19 +361,6 @@ foreach(INDEX RANGE ${MSIX_INTERNAL_APPLICATIONS_LAST_INDEX})
         message(FATAL_ERROR "[CPACK MSIX] Unsupported/unknown application type detected: ${APP_TYPE}")
     endif()
 endforeach()
-
-# Generate a manifest
-configure_file(
-    "${CMAKE_CURRENT_LIST_DIR}/AppxManifest.xml.in"
-    "${MSIX_STAGING_ROOT}/AppxManifest.xml"
-    @ONLY
-)
-
-# Copy manfiest assets
-file(MAKE_DIRECTORY "${MSIX_STAGING_ROOT}/Assets")
-file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO}" "${MSIX_STAGING_ROOT}/Assets/Logo.png")
-file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_44}" "${MSIX_STAGING_ROOT}/Assets/Logo-44.png")
-file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_150}" "${MSIX_STAGING_ROOT}/Assets/Logo-150.png")
 
 # Make a debug dir
 set(MSIX_STAGING_DEBUG_ROOT "${CPACK_TOPLEVEL_DIRECTORY}/MSIX_DEBUG")
@@ -352,57 +404,18 @@ if(MSIX_INTERNAL_PDB_COUNT GREATER 0)
     # We're done with MSIX_INTERNAL_PDB_FILES!
 endif()
 
-####################################################
-## WINDOWS KITS LOOKUP
-## CREDIT: https://forum.qt.io/topic/147272/preparing-app-for-microsoft-store-qt-6-cmake?_=1737373157758
-####################################################
-
-# Define search paths
-set(MSIX_INTERNAL_SEARCH_PATHS "")
-
-# Prioritise the user's preferred version
-if(MSIX_INTERNAL_WIN_KITS_VERSION_SET)
-    set(MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/${CPACK_MSIX_WIN_KITS_PREFERRED_VERSION}")
-    foreach(ARCH "x64" "arm64" "x86" "arm")
-        if(EXISTS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
-            list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${MSIX_INTERNAL_WIN_KITS_PREFERRED_VERSION_PATH}/${ARCH}")
-        endif()
-    endforeach()
-endif()
-
-# Get all versioned directories, newest to oldest!
-file(GLOB MSIX_INTERNAL_VERSIONED_DIRS LIST_DIRECTORIES true "${MSIX_INTERNAL_WINDOWS_KITS_BASE}/*")
-list(SORT MSIX_INTERNAL_VERSIONED_DIRS COMPARE NATURAL ORDER DESCENDING)
-
-# Paths lookup
-if(CPACK_MSIX_WIN_KITS_PREFER_NEWEST)
-    # Give priority to newer versions!
-    foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-    foreach(ARCH "x64" "arm64" "x86" "arm")
-            if(EXISTS "${DIR}/${ARCH}")
-                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
-            endif()
-        endforeach()
-    endforeach()
-else()
-    # Give priority to the newest arch-specific version!
-    foreach(ARCH "x64" "arm64" "x86" "arm")
-        foreach(DIR ${MSIX_INTERNAL_VERSIONED_DIRS})
-            if(EXISTS "${DIR}/${ARCH}")
-                list(APPEND MSIX_INTERNAL_SEARCH_PATHS "${DIR}/${ARCH}")
-            endif()
-        endforeach()
-    endforeach()
-endif()
-
-# Attempt to find 'makeappx'
-find_program(MAKEAPPX_EXECUTABLE makeappx
-    PATHS ${MSIX_INTERNAL_SEARCH_PATHS}
-    REQUIRED
+# Generate a manifest
+configure_file(
+    "${CMAKE_CURRENT_LIST_DIR}/AppxManifest.xml.in"
+    "${MSIX_STAGING_ROOT}/AppxManifest.xml"
+    @ONLY
 )
-if(MAKEAPPX_EXECUTABLE)
-    message(STATUS "[CPACK MSIX] Found MakeAppx at: ${MAKEAPPX_EXECUTABLE}")
-endif()
+
+# Copy manfiest assets
+file(MAKE_DIRECTORY "${MSIX_STAGING_ROOT}/Assets")
+file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO}" "${MSIX_STAGING_ROOT}/Assets/Logo.png")
+file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_44}" "${MSIX_STAGING_ROOT}/Assets/Logo-44.png")
+file(COPY_FILE "${CPACK_MSIX_PACKAGE_LOGO_150}" "${MSIX_STAGING_ROOT}/Assets/Logo-150.png")
 
 ####################################################
 ## PACKAGING
