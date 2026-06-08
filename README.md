@@ -68,13 +68,17 @@ you mostly only need these variables to get the MSIX external generator to work 
 ```cmake
 # Configs
 # set(CPACK_MSIX_RUNTIME_FOLDER_NAME custom/bin) # In case your default runtime folder isn't a typical root 'bin'
-set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a .msixupload file!
+set(CPACK_MSIX_GENERATE_UPLOAD ON) # If you want a '.msixupload' file!
 
 # Identity
 set(CPACK_MSIX_PACKAGE_ARCHITECTURE "x64") # You could also use arch names like x86_64, and arm64.
-set(CPACK_MSIX_PACKAGE_LOGO "C:/absolute/path/to/my/logo.png")
-set(CPACK_MSIX_PACKAGE_LOGO_44 "C:/absolute/path/to/my/logo_44x44.png")
-set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
+#set(CPACK_MSIX_PACKAGE_LOGO "C:/absolute/path/to/my/logo.png") # A 512x512 logo!
+#set(CPACK_MSIX_PACKAGE_LOGO_44 "C:/absolute/path/to/my/logo_44x44.png") # A 44x44 logo! 
+#set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png") # A 150x150 logo!
+
+# Also, must at least add one application implementation!
+# For example, a CLI alias:
+cpack_msix_add_application_alias(MyCMakeTarget "My Awesome App" "This is my own awesome app!" my_cli_alias my_second_cli_alias)
 ```
 
 ## `CPACK_MSIX_*` values
@@ -171,21 +175,28 @@ set(CPACK_MSIX_PACKAGE_LOGO_150 "C:/absolute/path/to/my/logo_150x150.png")
 - Legal Pattern: `[a-zA-Z0-9\.-]{3,50}`
 - Fallback: *Generates a legal identity name based on `CPACK_MSIX_PACKAGE_NAME`*
 
-#### `CPACK_MSIX_PACKAGE_LOGO` (*required*)
+#### `CPACK_MSIX_PACKAGE_LOGO`
 
 - Description: The absolute path to a `.png` logo for your package.
+- Default: *The path to the matching placeholder `.png` file in the assets folder*
 
-#### `CPACK_MSIX_PACKAGE_LOGO_44` (*required*)
+#### `CPACK_MSIX_PACKAGE_LOGO_44`
 
 - Description: The absolute path to a 44x44 `.png` logo for your package's program aliases.
+- Default: *The path to the matching placeholder `.png` file in the assets folder*
 
-#### `CPACK_MSIX_PACKAGE_LOGO_150` (*required*)
+#### `CPACK_MSIX_PACKAGE_LOGO_150`
 
 - Description: The absolute path to a 150x150 `.png` logo for your package's program aliases.
+- Default: *The path to the matching placeholder `.png` file in the assets folder*
 
 ### Publisher identity
 
-#### `CPACK_MSIX_PACKAGE_PUBLISHER_COMMON_NAME` (*required*)
+> [!IMPORTANT]
+> If you intend to sign your packages by yourself,
+> then your publisher identity **must** match your signing certificate!
+
+#### `CPACK_MSIX_PACKAGE_PUBLISHER_COMMON_NAME`
 
 - Fallback: `CPACK_PACKAGE_VENDOR`
 - Legal Pattern: [Read Distinguished Names docs](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/distinguished-names)
