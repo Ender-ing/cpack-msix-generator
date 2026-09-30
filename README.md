@@ -150,7 +150,7 @@ cpack_msix_add_application_alias(MyCMakeTarget "My Awesome App" "This is my own 
 #### `CPACK_MSIX_PACKAGE_VERSION_*`
 
 - Components: `CPACK_MSIX_PACKAGE_VERSION_MAJOR`, `CPACK_MSIX_PACKAGE_VERSION_MINOR`,
-  `CPACK_MSIX_PACKAGE_VERSION_PATCH`, `CPACK_MSIX_PACKAGE_VERSION_REVISION`
+  `CPACK_MSIX_PACKAGE_VERSION_PATCH`
 - Legal Pattern: `[0-9]+`
 - Default: `0`
 
@@ -270,7 +270,7 @@ cpack_msix_add_application_alias(MyCMakeTarget "My Awesome App" "This is my own 
 ### Applications
 
 > [!IMPORTANT]
-> You must add *at least* add one application implementation to your package in order for the generator not to fail!
+> You must add *at least* one application implementation to your package in order for the generator not to fail!
 
 #### `cpack_msix_add_application_alias`
 

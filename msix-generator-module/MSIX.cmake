@@ -18,8 +18,10 @@ cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 if(NOT DEFINED CPACK_MSIX_PACKAGE_VERSION)
     set(CPACK_MSIX_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION})
 endif()
-if(CPACK_MSIX_PACKAGE_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$")
+if(CPACK_MSIX_PACKAGE_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+\\.0+$")
     set(MSIX_INTERNAL_PACKAGE_VERSION ${CPACK_MSIX_PACKAGE_VERSION})
+elseif(CPACK_MSIX_PACKAGE_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    set(MSIX_INTERNAL_PACKAGE_VERSION ${CPACK_MSIX_PACKAGE_VERSION}.0)
 else()
     message(WARNING "[CPACK MSIX] No valid 'CPACK_MSIX_PACKAGE_VERSION' value detected. (Detected: '${CPACK_MSIX_PACKAGE_VERSION}') Falling back to 'CPACK_MSIX_PACKAGE_VERSION_*'")
     # CPACK_MSIX_PACKAGE_VERSION_MAJOR
@@ -35,10 +37,10 @@ else()
         set(CPACK_MSIX_PACKAGE_VERSION_PATCH 0)
     endif()
     # CPACK_MSIX_PACKAGE_VERSION_REVISION
-    if(NOT DEFINED CPACK_MSIX_PACKAGE_VERSION_REVISION)
-        set(CPACK_MSIX_PACKAGE_VERSION_REVISION 0)
+    # CPACK_MSIX_PACKAGE_VERSION_REVISION MUST ALWAYS BE SET TO 0!
     endif()
-    set(MSIX_INTERNAL_PACKAGE_VERSION "${CPACK_MSIX_PACKAGE_VERSION_MAJOR}.${CPACK_MSIX_PACKAGE_VERSION_MINOR}.${CPACK_MSIX_PACKAGE_VERSION_PATCH}.${CPACK_MSIX_PACKAGE_VERSION_REVISION}")
+    # NOTE THAT FOR STORE LISTINGS, THE REVISION VERSION MUST BE ZERO!
+    set(MSIX_INTERNAL_PACKAGE_VERSION "${CPACK_MSIX_PACKAGE_VERSION_MAJOR}.${CPACK_MSIX_PACKAGE_VERSION_MINOR}.${CPACK_MSIX_PACKAGE_VERSION_PATCH}.0")
 endif()
 
 # [PLATFORM VARIABLES]
@@ -304,6 +306,17 @@ if(MAKEAPPX_EXECUTABLE)
     message(STATUS "[CPACK MSIX] Found MakeAppx at: ${MAKEAPPX_EXECUTABLE}")
 endif()
 
+# Attempt to find 'signtool'
+find_program(SIGNTOOL_EXECUTABLE signtool
+    PATHS ${MSIX_INTERNAL_WIN_KITS_SEARCH_PATHS}
+    REQUIRED
+)
+if(SIGNTOOL_EXECUTABLE)
+    message(STATUS "[CPACK MSIX] Found SignTool at: ${SIGNTOOL_EXECUTABLE}")
+endif()
+
+# ${SIGNTOOL_EXECUTABLE} sign /fd SHA256 /a /f "path/to/cert.pfx" /p "store_password" "path/to/pacckage.msix"
+
 ####################################################
 ## PACKAGING READYUP
 ####################################################
@@ -330,7 +343,7 @@ foreach(INDEX RANGE ${MSIX_INTERNAL_APPLICATIONS_LAST_INDEX})
       
             <uap:VisualElements DisplayName=\"${CURRENT_NAME}\" Description=\"${CURRENT_DESCRIPTION}\" 
                               BackgroundColor=\"transparent\" Square150x150Logo=\"Assets\\Logo-150.png\" Square44x44Logo=\"Assets\\Logo-44.png\"
-                              AppListEntry=\"none\" />
+                              AppListEntry=\"default\" />
 
             <Extensions>
                 <uap5:Extension Category=\"windows.appExecutionAlias\">
