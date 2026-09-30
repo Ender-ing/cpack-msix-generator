@@ -198,13 +198,14 @@ cpack_msix_add_application_alias(MyCMakeTarget "My Awesome App" "This is my own 
 
 #### `CPACK_MSIX_PACKAGE_PUBLISHER_COMMON_NAME`
 
+- Description: Sets the *publisher's CN* value. (Must match your Microsoft account MC identiy, similar to `XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX`!)
 - Fallback: `CPACK_PACKAGE_VENDOR`
 - Legal Pattern: [Read Distinguished Names docs](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/distinguished-names)
 
 #### `CPACK_MSIX_PACKAGE_PUBLISHER_DISPLAY_NAME`
 
 - Description: Sets the display name of the publisher within the installer.
-- Fallback: `CPACK_MSIX_PACKAGE_PUBLISHER_COMMON_NAME`
+- Fallback: `CPACK_PACKAGE_VENDOR`
 
 #### `CPACK_MSIX_PACKAGE_PUBLISHER_ORG`
 
